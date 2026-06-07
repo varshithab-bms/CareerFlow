@@ -15,7 +15,8 @@ export function clearStoredToken(): void {
 }
 
 const baseURL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "/api/v1";
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ??
+  "http://localhost:5000/api/v1";
 
 export const api = axios.create({
   baseURL,
