@@ -27,7 +27,7 @@
     "@types/express": "^4.17.25",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/multer": "^2.1.0",
-    "@types/node": "^22.7.4",
+    "@types/node": "^22.19.21",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"
   }
