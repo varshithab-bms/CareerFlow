@@ -35,9 +35,9 @@ export function PrepSessionsPage() {
         <p className="mt-2 max-w-2xl text-slate-600">
           Pick a job role (or enter your own). We build{" "}
           <span className="font-semibold text-slate-800">three structured sessions</span>{" "}
-          offline using curated templates—no LLM API required. Optionally add{" "}
-          <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">YOUTUBE_API_KEY</code>{" "}
-          on the server for real video links per topic.
+          to help you prepare, including{" "}
+          <span className="font-semibold text-slate-800">key topics to cover</span>,{" "}
+          <span className="font-semibold text-slate-800">suggested videos</span>, and more.
         </p>
       </div>
 

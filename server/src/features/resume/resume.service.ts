@@ -38,8 +38,19 @@ export async function uploadResume(userId: string, file: Express.Multer.File) {
 }
 
 /* ---------------- ANALYZE ---------------- */
-export async function analyzeResume(resumeId: string, jobTitle: string) {
-  const resume = await Resume.findById(resumeId);
+export async function analyzeResume(
+  userId: string,
+  resumeId: string,
+  jobTitle: string,
+) {
+  if (!mongoose.Types.ObjectId.isValid(resumeId)) {
+    throw new ApiError("Invalid resume id", 400);
+  }
+
+  const resume = await Resume.findOne({
+    _id: resumeId,
+    userId: new mongoose.Types.ObjectId(userId),
+  });
   if (!resume) throw new ApiError("Resume not found", 404);
 
   if (!jobTitle) throw new ApiError("Job title is required for analysis", 400);
@@ -61,8 +72,19 @@ export async function analyzeResume(resumeId: string, jobTitle: string) {
 }
 
 /* ---------------- TAILOR ---------------- */
-export async function tailorResume(resumeId: string, jobDescription: string) {
-  const resume = await Resume.findById(resumeId);
+export async function tailorResume(
+  userId: string,
+  resumeId: string,
+  jobDescription: string,
+) {
+  if (!mongoose.Types.ObjectId.isValid(resumeId)) {
+    throw new ApiError("Invalid resume id", 400);
+  }
+
+  const resume = await Resume.findOne({
+    _id: resumeId,
+    userId: new mongoose.Types.ObjectId(userId),
+  });
   if (!resume) throw new ApiError("Resume not found", 404);
 
   const safeJD = jobDescription.slice(0, 5000);
@@ -105,8 +127,15 @@ export async function getResumeHistory(userId: string) {
 }
 
 /* ---------------- GET ONE ---------------- */
-export async function getResumeById(resumeId: string) {
-  const resume = await Resume.findById(resumeId).lean();
+export async function getResumeById(userId: string, resumeId: string) {
+  if (!mongoose.Types.ObjectId.isValid(resumeId)) {
+    throw new ApiError("Invalid resume id", 400);
+  }
+
+  const resume = await Resume.findOne({
+    _id: resumeId,
+    userId: new mongoose.Types.ObjectId(userId),
+  }).lean();
   if (!resume) throw new ApiError("Resume not found", 404);
 
   return {

@@ -22,7 +22,7 @@ export async function analyzeResume(req: Request, res: Response, next: NextFunct
     if (!resumeId) throw new Error("resumeId required");
     if (!jobTitle) throw new Error("jobTitle required");
 
-    const result = await resumeService.analyzeResume(resumeId, jobTitle);
+    const result = await resumeService.analyzeResume(req.userId, resumeId, jobTitle);
 
     res.status(200).json({ success: true, data: result });
   } catch (error) {
@@ -40,6 +40,7 @@ export async function tailorResume(req: Request, res: Response, next: NextFuncti
     }
 
     const result = await resumeService.tailorResume(
+      req.userId,
       resumeId,
       jobDescription
     );
@@ -68,7 +69,7 @@ export async function getResume(req: Request, res: Response, next: NextFunction)
 
     const { resumeId } = req.params;
 
-    const result = await resumeService.getResumeById(resumeId);
+    const result = await resumeService.getResumeById(req.userId, resumeId);
 
     res.status(200).json({ success: true, data: result });
   } catch (error) {

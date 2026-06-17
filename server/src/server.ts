@@ -10,12 +10,16 @@ import interviewRouter from "./features/interview/interview.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
+const allowedOrigins = env.CLIENT_ORIGIN.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "development"
-      ? true               // allow any origin in dev
-      : env.CLIENT_ORIGIN, // production uses the env value
-  credentials: true,
+      ? true
+      : allowedOrigins,
+  credentials: false,
 };
 app.use(cors(corsOptions));
 app.use(express.json());

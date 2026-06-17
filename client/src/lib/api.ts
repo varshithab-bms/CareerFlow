@@ -14,12 +14,15 @@ export function clearStoredToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-const baseURL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ??
-  "http://localhost:5000/api/v1";
+const baseURL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
+
+if (!baseURL) {
+  throw new Error("Missing VITE_API_URL");
+}
 
 export const api = axios.create({
   baseURL,
+  timeout: 20000,
   headers: {
     "Content-Type": "application/json",
   },

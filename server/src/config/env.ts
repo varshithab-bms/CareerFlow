@@ -7,10 +7,7 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
   JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters"),
   JWT_EXPIRES_IN: z.string().default("7d"),
-  CLIENT_ORIGIN: z.preprocess(
-    (v) => (v === "" || v === undefined ? undefined : v),
-    z.string().url().optional(),
-  ),
+  CLIENT_ORIGIN: z.string().min(1, "CLIENT_ORIGIN is required"),
   YOUTUBE_API_KEY: z.preprocess((v) => {
     if (v === "" || v === undefined) return undefined;
     let s = String(v).trim();

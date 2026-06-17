@@ -2,7 +2,6 @@ import { z } from "zod";
 import { env } from "../../config/env.js";
 import { getYoutubeResources } from "../../utils/youtube.js";
 import {
-  buildOverviewMarkdown,
   generateInterviewPlan,
   type InterviewPlanSession,
 } from "./interviewPlan.generator.js";
@@ -24,6 +23,7 @@ export type PrepVideoDto = {
 
 export type PrepTopicDto = {
   name: string;
+  description?: string;
   videos: PrepVideoDto[];
 };
 
@@ -88,13 +88,24 @@ async function enrichSessionsWithYoutube(
 export async function generatePrepContent(body: unknown): Promise<PrepPlanDto> {
   const { jobRole } = generateSchema.parse(body);
 
-  const plan = generateInterviewPlan(jobRole);
-  const overviewMarkdown = buildOverviewMarkdown(plan.role, plan.matchedTemplate);
-  const sessions = await enrichSessionsWithYoutube(plan.role, plan.sessions);
+  const plan = await generateInterviewPlan(jobRole);
+
+  const overviewMarkdown = `
+# Prep overview — ${plan.role}
+
+This interview roadmap was generated specifically for the ${plan.role} role.
+
+Work through the sessions in order, practice each topic, and use the linked resources to deepen your understanding.
+`;
+
+  const sessions = await enrichSessionsWithYoutube(
+    plan.role,
+    plan.sessions,
+  );
 
   return {
     jobRole: plan.role,
-    model: "rule-based-v1",
+    model: "gemini-2.5-flash",
     overviewMarkdown,
     sessions,
     youtubeConfigured: Boolean(env.YOUTUBE_API_KEY),
