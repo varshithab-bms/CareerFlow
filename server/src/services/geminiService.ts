@@ -1,5 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "../config/env.js";
+import {
+  generateContentWithRetry,
+  getGeminiErrorMessage,
+  isGeminiRateLimitError,
+} from "./geminiRetry.js";
 
 const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 
@@ -7,13 +12,27 @@ async function generateWithFallback(prompt: string) {
   const model = genAI.getGenerativeModel({ model: env.GEMINI_MODEL });
   
   try {
-    const result = await model.generateContent(prompt);
-    return result;
+    return await generateContentWithRetry(model, prompt, {
+      label: env.GEMINI_MODEL,
+      retries: 3,
+    });
   } catch (error: any) {
-    console.warn(`Primary model failed (${error.message}). Trying fallback model...`);
+    const message = getGeminiErrorMessage(error);
+    const cooldownMs = isGeminiRateLimitError(error) ? 3000 : 0;
+
+    console.warn(
+      `Primary model failed (${message}). Trying fallback model${cooldownMs ? " after cooldown" : ""}...`,
+    );
+
+    if (cooldownMs) {
+      await new Promise((resolve) => setTimeout(resolve, cooldownMs));
+    }
+
     const fallbackModel = genAI.getGenerativeModel({ model: env.GEMINI_FALLBACK_MODEL });
-    const result = await fallbackModel.generateContent(prompt);
-    return result;
+    return generateContentWithRetry(fallbackModel, prompt, {
+      label: env.GEMINI_FALLBACK_MODEL,
+      retries: 2,
+    });
   }
 }
 

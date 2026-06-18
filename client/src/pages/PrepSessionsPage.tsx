@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { AppLayout } from "../components/AppLayout";
 import type { AxiosError } from "axios";
+import { ArrowRight, BookOpen, Briefcase, Loader2, Sparkles, Video } from "lucide-react";
+import { AppLayout } from "../components/AppLayout";
 import { getErrorMessage } from "../context/AuthContext";
 import { PrepMarkdown } from "../features/prep/components/PrepMarkdown";
 import { PrepPlanSessions } from "../features/prep/components/PrepPlanSessions";
@@ -9,7 +10,6 @@ import { useGeneratePrepMutation } from "../features/prep/hooks";
 
 export function PrepSessionsPage() {
   const gen = useGeneratePrepMutation();
-
   const [preset, setPreset] = useState<string>(JOB_ROLE_PRESETS[0] ?? "");
   const [customRole, setCustomRole] = useState("");
 
@@ -18,7 +18,10 @@ export function PrepSessionsPage() {
     return preset;
   }, [preset, customRole]);
 
-  const errorMsg = gen.error ? getErrorMessage(gen.error as AxiosError) : null;
+  const rawError = gen.error ? getErrorMessage(gen.error as AxiosError) : null;
+  const errorMsg = rawError?.toLowerCase().includes("too many")
+    ? "Gemini is temporarily rate limited. Wait a minute, then generate again."
+    : rawError;
 
   function handleGenerate(e: FormEvent) {
     e.preventDefault();
@@ -28,59 +31,93 @@ export function PrepSessionsPage() {
 
   return (
     <AppLayout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          Interview prep
-        </h1>
-        <p className="mt-2 max-w-2xl text-slate-600">
-          Pick a job role (or enter your own). We build{" "}
-          <span className="font-semibold text-slate-800">three structured sessions</span>{" "}
-          to help you prepare, including{" "}
-          <span className="font-semibold text-slate-800">key topics to cover</span>,{" "}
-          <span className="font-semibold text-slate-800">suggested videos</span>, and more.
-        </p>
+      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-brand">Prep Sessions</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+            Build a focused interview roadmap.
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+            Pick a role and generate three structured sessions with topics,
+            objectives, and learning resources.
+          </p>
+        </div>
       </div>
 
-        <form
-          onSubmit={handleGenerate}
-          className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-card"
-        >
-          <label
-            htmlFor="job-role-preset"
-            className="block text-sm font-medium text-slate-700"
-          >
-            Job role
-          </label>
-          <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="min-w-0 flex-1">
+      <div className="grid items-start gap-6 lg:grid-cols-[0.9fr_1.3fr]">
+        <aside className="soft-panel p-6">
+          <div className="inline-flex rounded-xl border border-indigo-100 bg-indigo-50 p-2 text-indigo-700">
+            <BookOpen className="h-5 w-5" />
+          </div>
+          <h2 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">
+            From broad role to daily practice.
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            CareerFlow turns your target title into a short prep plan you can
+            complete, review, and convert into tasks.
+          </p>
+          <div className="mt-6 grid gap-3">
+            {[
+              "Three interview-focused sessions",
+              "Role-specific topics",
+              "Optional video resources",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                <Sparkles className="h-4 w-4 text-brand" />
+                {item}
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        <form onSubmit={handleGenerate} className="soft-panel p-5 sm:p-6">
+          <div>
+            <p className="text-sm font-semibold text-brand">Plan setup</p>
+            <h2 className="mt-1 text-xl font-bold text-slate-950">Choose your target role</h2>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div>
+              <label htmlFor="job-role-preset" className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <Briefcase className="h-4 w-4 text-brand" />
+                Job role
+              </label>
               <select
                 id="job-role-preset"
                 value={preset}
                 onChange={(e) => setPreset(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none ring-brand/30 focus:border-brand focus:ring-2"
+                className="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-brand"
               >
                 {JOB_ROLE_PRESETS.map((role) => (
                   <option key={role} value={role}>
                     {role}
                   </option>
                 ))}
-                <option value={CUSTOM_ROLE_VALUE}>Custom role…</option>
+                <option value={CUSTOM_ROLE_VALUE}>Custom role...</option>
               </select>
             </div>
             <button
               type="submit"
               disabled={gen.isPending || effectiveRole.length < 2}
-              className="shrink-0 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+              className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {gen.isPending ? "Generating…" : "Generate prep plan"}
+              {gen.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating
+                </>
+              ) : (
+                <>
+                  Generate plan
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
           </div>
-          {preset === CUSTOM_ROLE_VALUE ? (
+
+          {preset === CUSTOM_ROLE_VALUE && (
             <div className="mt-4">
-              <label
-                htmlFor="custom-role"
-                className="block text-sm font-medium text-slate-700"
-              >
+              <label htmlFor="custom-role" className="mb-2 block text-sm font-semibold text-slate-800">
                 Custom title
               </label>
               <input
@@ -88,56 +125,65 @@ export function PrepSessionsPage() {
                 type="text"
                 value={customRole}
                 onChange={(e) => setCustomRole(e.target.value)}
-                placeholder="e.g. Staff Backend Engineer — Fintech"
-                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-brand/30 focus:border-brand focus:ring-2"
+                placeholder="Staff Backend Engineer - Fintech"
+                className="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand"
               />
             </div>
-          ) : null}
+          )}
 
-          {errorMsg ? (
-            <div
-              className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
-              role="alert"
-            >
+          {errorMsg && (
+            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800" role="alert">
               {errorMsg}
             </div>
-          ) : null}
+          )}
         </form>
+      </div>
 
-        {gen.data ? (
-          <div className="mt-10 space-y-10">
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-card">
-              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 pb-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Plan for
-                  </p>
-                  <p className="text-lg font-semibold text-slate-900">{gen.data.jobRole}</p>
-                </div>
-                <div className="text-right text-xs text-slate-500">
-                  <p>Engine: {gen.data.model}</p>
-                  <p>
-                    YouTube:{" "}
-                    {gen.data.youtubeConfigured ? (
-                      <span className="font-medium text-emerald-700">enabled</span>
-                    ) : (
-                      <span className="font-medium text-amber-800">optional</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="pt-6">
-                <PrepMarkdown content={gen.data.overviewMarkdown} />
-              </div>
-            </section>
-
-            <PrepPlanSessions plan={gen.data} />
+      {gen.isPending && (
+        <div className="mt-8 soft-panel flex items-center gap-4 p-5">
+          <Loader2 className="h-6 w-6 animate-spin text-brand" />
+          <div>
+            <p className="font-semibold text-slate-950">Generating your prep roadmap</p>
+            <p className="mt-1 text-sm text-slate-600">This can take a few seconds if Gemini is busy.</p>
           </div>
-        ) : (
-          <p className="mt-8 text-center text-sm text-slate-500">
-            Generated prep will appear here after you choose a role and generate.
-          </p>
-        )}
+        </div>
+      )}
+
+      {gen.data ? (
+        <div className="mt-8 space-y-6">
+          <section className="soft-panel p-5 sm:p-6">
+            <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Plan for</p>
+                <p className="mt-1 text-xl font-bold text-slate-950">{gen.data.jobRole}</p>
+              </div>
+              <div className="grid gap-2 text-xs text-slate-500 sm:text-right">
+                <p>Engine: <span className="font-semibold text-slate-700">{gen.data.model}</span></p>
+                <p className="inline-flex items-center gap-1.5 sm:justify-end">
+                  <Video className="h-3.5 w-3.5" />
+                  YouTube:{" "}
+                  {gen.data.youtubeConfigured ? (
+                    <span className="font-semibold text-emerald-700">enabled</span>
+                  ) : (
+                    <span className="font-semibold text-amber-700">optional</span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="pt-5">
+              <PrepMarkdown content={gen.data.overviewMarkdown} />
+            </div>
+          </section>
+
+          <PrepPlanSessions plan={gen.data} />
+        </div>
+      ) : !gen.isPending ? (
+        <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center">
+          <BookOpen className="mx-auto h-9 w-9 text-slate-400" />
+          <p className="mt-3 text-sm font-semibold text-slate-700">No prep plan yet</p>
+          <p className="mt-1 text-sm text-slate-500">Choose a role and generate your first roadmap.</p>
+        </div>
+      ) : null}
     </AppLayout>
   );
 }

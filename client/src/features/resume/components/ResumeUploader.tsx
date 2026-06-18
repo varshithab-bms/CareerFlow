@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
+import { FileCheck2, FileUp, Sparkles, Target, X } from "lucide-react";
 import { useToast } from "../../../context/ToastContext";
 
 interface ResumeUploaderProps {
@@ -16,44 +17,42 @@ export function ResumeUploader({ onUpload, isUploading }: ResumeUploaderProps) {
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files?.[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       handleFile(e.target.files[0]);
     }
   };
 
   const handleFile = (file: File) => {
-    if (
+    const isAccepted =
       file.type === "application/pdf" ||
       file.type ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      setSelectedFile(file);
-    } else {
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+    if (!isAccepted) {
       showToast("Please upload a PDF or DOCX file.", "error");
+      return;
     }
+
+    setSelectedFile(file);
   };
 
   const handleSubmit = async () => {
     if (!jobTitle.trim()) {
-      showToast("Please enter a job title first.", "error");
+      showToast("Please enter a target role first.", "error");
       return;
     }
     if (selectedFile) {
@@ -63,60 +62,85 @@ export function ResumeUploader({ onUpload, isUploading }: ResumeUploaderProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
-      <h2 className="text-lg font-semibold text-slate-900">Upload your resume</h2>
-      <p className="mt-1 text-sm text-slate-600">
-        Upload a PDF or DOCX file to get started with ATS analysis and enhancement suggestions.
-      </p>
-
-      <div className="mt-6">
-        <label htmlFor="jobTitle" className="block text-sm font-medium text-slate-700 mb-1">
-          Target Job Title
-        </label>
-        <input
-          type="text"
-          id="jobTitle"
-          value={jobTitle}
-          onChange={(e) => setJobTitle(e.target.value)}
-          placeholder="e.g. Senior Frontend Developer"
-          className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition"
-        />
-      </div>
-
-      <div
-        className={`mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-colors ${
-          dragActive
-            ? "border-brand bg-brand-soft/20"
-            : "border-slate-300 hover:border-slate-400"
-        }`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-brand mb-4">
-          <svg
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-            />
-          </svg>
+    <div className="grid gap-6 lg:grid-cols-[0.9fr_1.3fr]">
+      <aside className="soft-panel p-6">
+        <div className="inline-flex rounded-xl border border-blue-100 bg-blue-50 p-2 text-blue-700">
+          <Sparkles className="h-5 w-5" />
         </div>
-        <p className="text-center text-sm font-medium text-slate-700">
-          {selectedFile ? selectedFile.name : "Drag and drop your resume here"}
-        </p>
-        <p className="mt-1 text-center text-xs text-slate-500">
-          PDF or DOCX up to 5MB
+        <h2 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">
+          Resume coaching in three steps
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          Upload your resume and target role. CareerFlow will score the resume,
+          identify gaps, and turn vague bullets into sharper impact statements.
         </p>
 
-        <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row">
+        <div className="mt-6 space-y-4">
+          {[
+            "Upload PDF or DOCX",
+            "Choose the role you are targeting",
+            "Review strengths, risks, keywords, and rewrites",
+          ].map((step, index) => (
+            <div key={step} className="flex gap-3">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand">
+                {index + 1}
+              </div>
+              <p className="pt-1 text-sm font-medium text-slate-700">{step}</p>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      <section className="soft-panel p-5 sm:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-slate-950">Upload your resume</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              Add a target role so the feedback is specific instead of generic.
+            </p>
+          </div>
+          {selectedFile && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              <FileCheck2 className="h-3.5 w-3.5" />
+              File ready
+            </span>
+          )}
+        </div>
+
+        <div className="mt-6">
+          <label htmlFor="jobTitle" className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <Target className="h-4 w-4 text-brand" />
+            Target role
+          </label>
+          <input
+            type="text"
+            id="jobTitle"
+            value={jobTitle}
+            onChange={(e) => setJobTitle(e.target.value)}
+            placeholder="Senior Frontend Developer"
+            className="focus-ring w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand"
+          />
+        </div>
+
+        <div
+          className={`mt-5 flex min-h-64 flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition ${
+            dragActive
+              ? "border-brand bg-brand-soft/40"
+              : "border-slate-300 bg-slate-50/60 hover:border-slate-400 hover:bg-white"
+          }`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-brand shadow-sm ring-1 ring-slate-200">
+            <FileUp className="h-7 w-7" />
+          </div>
+          <p className="max-w-sm text-sm font-semibold text-slate-800">
+            {selectedFile ? selectedFile.name : "Drag and drop your resume here"}
+          </p>
+          <p className="mt-2 text-xs text-slate-500">PDF or DOCX up to 5MB</p>
+
           <input
             ref={inputRef}
             type="file"
@@ -124,34 +148,40 @@ export function ResumeUploader({ onUpload, isUploading }: ResumeUploaderProps) {
             accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             onChange={handleChange}
           />
-          {!selectedFile && (
-            <button
-              onClick={() => inputRef.current?.click()}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Select file
-            </button>
-          )}
-          {selectedFile && (
-            <>
+
+          <div className="mt-5 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
+            {!selectedFile ? (
               <button
-                onClick={() => setSelectedFile(null)}
-                disabled={isUploading}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="focus-ring rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
               >
-                Clear
+                Select file
               </button>
-              <button
-                onClick={handleSubmit}
-                disabled={isUploading}
-                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isUploading ? "Uploading..." : "Analyze Resume"}
-              </button>
-            </>
-          )}
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFile(null)}
+                  disabled={isUploading}
+                  className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <X className="h-4 w-4" />
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isUploading}
+                  className="focus-ring rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isUploading ? "Analyzing..." : "Analyze resume"}
+                </button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

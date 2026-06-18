@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "../../config/env.js";
+import { generateContentWithRetry } from "../../services/geminiRetry.js";
 
 const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 export type RoleTemplateId = "ai-generated";
@@ -50,7 +51,10 @@ Requirements:
 - Topics must be specific to the role
 `;
 
-  const result = await model.generateContent(prompt);
+  const result = await generateContentWithRetry(model, prompt, {
+    label: "prep-plan",
+    retries: 3,
+  });
 
   const text = result.response.text();
 

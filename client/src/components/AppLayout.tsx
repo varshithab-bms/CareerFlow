@@ -43,7 +43,7 @@ export function AppLayout({
               key={link.name}
               to={link.path}
               onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`focus-ring flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-brand-soft text-brand"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
@@ -85,7 +85,7 @@ export function AppLayout({
         </div>
         <button
           onClick={logout}
-          className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
+          className="focus-ring rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
           title="Log out"
         >
           <LogOut className="h-5 w-5" />
@@ -95,7 +95,7 @@ export function AppLayout({
   );
 
   return (
-    <div className="min-h-screen bg-slate-50/50 md:pl-56">
+    <div className="min-h-screen bg-slate-50/70 pb-20 md:pb-0 md:pl-56">
       {/* Desktop Sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-56 flex-col border-r border-slate-200 bg-white md:flex">
         <div className="flex h-16 shrink-0 items-center px-6 border-b border-slate-200/80">
@@ -126,7 +126,8 @@ export function AppLayout({
         </Link>
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="p-2 -mr-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+          className="focus-ring -mr-2 rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+          aria-label="Open navigation"
         >
           <Menu className="h-6 w-6" />
         </button>
@@ -153,7 +154,8 @@ export function AppLayout({
               </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2 -mr-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
+                className="focus-ring -mr-2 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                aria-label="Close navigation"
               >
                 <X className="h-6 w-6" />
               </button>
@@ -175,6 +177,28 @@ export function AppLayout({
         )}
         {children}
       </main>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-2 py-2 shadow-[0_-8px_24px_rgb(15_23_42_/_0.08)] backdrop-blur md:hidden">
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+          {navLinks.map((link) => {
+            const isActive = location.pathname === link.path;
+            return (
+              <Link
+                key={link.name}
+                to={link.path}
+                className={`focus-ring flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold ${
+                  isActive
+                    ? "bg-brand-soft text-brand"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                }`}
+              >
+                <link.icon className="h-4 w-4" />
+                <span className="w-full truncate text-center">{link.name.split(" ")[0]}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

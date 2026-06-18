@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { CalendarDays, Plus, TextCursorInput } from "lucide-react";
 import type { TaskPriority } from "../api";
 
 interface TaskFormProps {
@@ -10,6 +11,12 @@ interface TaskFormProps {
   }) => Promise<void>;
   submitting?: boolean;
 }
+
+const priorities: Array<{ value: TaskPriority; label: string; className: string }> = [
+  { value: "low", label: "Low", className: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+  { value: "medium", label: "Medium", className: "border-amber-200 bg-amber-50 text-amber-700" },
+  { value: "high", label: "High", className: "border-rose-200 bg-rose-50 text-rose-700" },
+];
 
 export function TaskForm({ onSubmit, submitting }: TaskFormProps) {
   const [title, setTitle] = useState("");
@@ -34,17 +41,19 @@ export function TaskForm({ onSubmit, submitting }: TaskFormProps) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-card"
-    >
-      <h2 className="text-lg font-semibold text-slate-900">New task</h2>
-      <p className="mt-1 text-sm text-slate-600">
-        Capture what you need to do next. You can change status from the card.
-      </p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <label htmlFor="task-title" className="mb-1 block text-sm font-medium text-slate-700">
+    <form onSubmit={handleSubmit} className="soft-panel p-5 sm:p-6">
+      <div>
+        <p className="text-sm font-semibold text-brand">New action item</p>
+        <h2 className="mt-1 text-xl font-bold text-slate-950">Capture next step</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Turn resume feedback, prep topics, and interview notes into a visible checklist.
+        </p>
+      </div>
+
+      <div className="mt-5 grid gap-4">
+        <div>
+          <label htmlFor="task-title" className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <TextCursorInput className="h-4 w-4 text-brand" />
             Title
           </label>
           <input
@@ -52,15 +61,13 @@ export function TaskForm({ onSubmit, submitting }: TaskFormProps) {
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Finish system design notes"
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-brand/30 focus:border-brand focus:ring-2"
+            placeholder="Rewrite resume project bullet with metrics"
+            className="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand"
           />
         </div>
-        <div className="sm:col-span-2">
-          <label
-            htmlFor="task-description"
-            className="mb-1 block text-sm font-medium text-slate-700"
-          >
+
+        <div>
+          <label htmlFor="task-description" className="mb-2 block text-sm font-semibold text-slate-800">
             Description <span className="font-normal text-slate-400">(optional)</span>
           </label>
           <textarea
@@ -68,45 +75,54 @@ export function TaskForm({ onSubmit, submitting }: TaskFormProps) {
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add context or links…"
-            className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-brand/30 focus:border-brand focus:ring-2"
+            placeholder="Add context, links, or the feedback you are acting on..."
+            className="focus-ring w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand"
           />
         </div>
-        <div>
-          <label htmlFor="task-priority" className="mb-1 block text-sm font-medium text-slate-700">
-            Priority
-          </label>
-          <select
-            id="task-priority"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as TaskPriority)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-brand/30 focus:border-brand focus:ring-2"
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </div>
-        <div>
-          <label htmlFor="task-due" className="mb-1 block text-sm font-medium text-slate-700">
-            Due date <span className="font-normal text-slate-400">(optional)</span>
-          </label>
-          <input
-            id="task-due"
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-brand/30 focus:border-brand focus:ring-2"
-          />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-800">Priority</label>
+            <div className="grid grid-cols-3 gap-2">
+              {priorities.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setPriority(item.value)}
+                  className={`focus-ring rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                    priority === item.value ? item.className : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="task-due" className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <CalendarDays className="h-4 w-4 text-brand" />
+              Due date <span className="font-normal text-slate-400">(optional)</span>
+            </label>
+            <input
+              id="task-due"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-brand"
+            />
+          </div>
         </div>
       </div>
+
       <div className="mt-6 flex justify-end">
         <button
           type="submit"
-          disabled={submitting}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={submitting || !title.trim()}
+          className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Adding…" : "Add task"}
+          <Plus className="h-4 w-4" />
+          {submitting ? "Adding..." : "Add task"}
         </button>
       </div>
     </form>

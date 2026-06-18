@@ -73,13 +73,23 @@ export function InterviewPage() {
   };
 
   return (
-    <AppLayout title="Mock Interview">
+    <AppLayout>
+      <div className="mb-8">
+        <p className="text-sm font-semibold text-brand">Mock Interview</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+          Practice answers with structured feedback.
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+          Move through each question with a focused workspace, session controls,
+          and feedback you can use immediately.
+        </p>
+      </div>
         {!interview ? (
           <>
             <InterviewSetup onStart={handleStart} isLoading={isLoading} />
           </>
         ) : interview.isComplete && interview.finalScore !== undefined ? (
-          <InterviewResults interview={interview} />
+          <InterviewResults interview={interview} onRetake={() => setInterview(null)} />
         ) : interview.question ? (
           <ActiveSession
             question={interview.question}
@@ -90,6 +100,7 @@ export function InterviewPage() {
             lastEvaluation={interview.evaluation}
             onNextQuestion={handleNextQuestion}
             isComplete={interview.isComplete}
+            onRetake={() => setInterview(null)}
           />
         ) : null}
     </AppLayout>

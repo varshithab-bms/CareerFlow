@@ -11,6 +11,7 @@ import {
 } from "../features/resume/api";
 import { useToast } from "../context/ToastContext";
 import { SkeletonText } from "../components/Skeleton";
+import { FilePlus2, History, Wand2 } from "lucide-react";
 
 export function ResumePage() {
   const { showToast } = useToast();
@@ -91,11 +92,28 @@ export function ResumePage() {
   };
 
   return (
-    <AppLayout title="Resume Enhancer">
-      <div className="grid gap-8 lg:grid-cols-3 items-start">
-        {/* Left Panel: History */}
-        <div className="lg:col-span-1 rounded-2xl border border-slate-200 bg-white p-6 shadow-card flex flex-col h-[calc(100vh-12rem)] sticky top-24">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Past Resumes</h3>
+    <AppLayout>
+      <div className="mb-8">
+        <p className="text-sm font-semibold text-brand">Resume Analyzer</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+          Turn your resume into interview momentum.
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+          Upload, analyze, tailor, and revisit prior resume feedback from one focused workspace.
+        </p>
+      </div>
+
+      <div className="grid items-start gap-6 lg:grid-cols-3">
+        <aside className="soft-panel flex max-h-[32rem] flex-col p-5 lg:sticky lg:top-24 lg:col-span-1 lg:h-[calc(100vh-12rem)] lg:max-h-none">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-slate-500" />
+              <h3 className="text-lg font-bold text-slate-950">Past resumes</h3>
+            </div>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+              {history.length}
+            </span>
+          </div>
           
           <div className="flex-1 overflow-y-auto min-h-0 pr-2">
             {isHistoryLoading ? (
@@ -111,7 +129,7 @@ export function ResumePage() {
                   return (
                     <li 
                       key={item.id || i} 
-                      className={`text-sm text-slate-700 p-3 rounded-lg border cursor-pointer transition ${resume?.id === item.id ? "bg-brand-soft border-brand/30" : "bg-slate-50 border-slate-100 hover:bg-slate-100"}`} 
+                      className={`cursor-pointer rounded-xl border p-3 text-sm text-slate-700 transition ${resume?.id === item.id ? "border-brand/30 bg-brand-soft" : "border-slate-100 bg-slate-50 hover:bg-slate-100"}`} 
                       onClick={() => handleHistoryClick(item.id)}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -126,7 +144,13 @@ export function ResumePage() {
                 })}
               </ul>
             ) : (
-              <p className="text-sm text-slate-500">No resumes uploaded yet.</p>
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+                <FilePlus2 className="mx-auto h-8 w-8 text-slate-400" />
+                <p className="mt-3 text-sm font-semibold text-slate-700">No resumes yet</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Your analyses will appear here for quick review.
+                </p>
+              </div>
             )}
           </div>
           
@@ -136,14 +160,14 @@ export function ResumePage() {
                 setResume(null);
                 setJobDescription("");
               }}
-              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+              className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
             >
-              + Upload another resume
+              <FilePlus2 className="h-4 w-4" />
+              Upload another resume
             </button>
           </div>
-        </div>
+        </aside>
 
-        {/* Main Content */}
         <div className="lg:col-span-2">
           {!resume && !isUploading ? (
             <ResumeUploader onUpload={handleUpload} isUploading={isUploading} />
@@ -153,21 +177,32 @@ export function ResumePage() {
                 <ResumeAnalysisResult isLoading={true} />
               ) : (
                 <>
-                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Tailor for a Specific Job</h3>
+                  <div className="soft-panel p-5 sm:p-6">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-xl border border-amber-100 bg-amber-50 p-2 text-amber-700">
+                        <Wand2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-950">Tailor for a specific job</h3>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                          Paste a job description to get role-specific positioning suggestions.
+                        </p>
+                      </div>
+                    </div>
                     <textarea
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
                       placeholder="Paste the job description here..."
-                      className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition min-h-[100px] resize-y"
+                      className="focus-ring mt-5 min-h-[120px] w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand"
                     />
 
                     <button
                       onClick={handleTailor}
                       disabled={isTailoring}
-                      className="mt-4 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+                      className="focus-ring mt-4 inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {isTailoring ? "Tailoring..." : "Tailor Resume"}
+                      <Wand2 className="h-4 w-4" />
+                      {isTailoring ? "Tailoring..." : "Tailor resume"}
                     </button>
                   </div>
 
