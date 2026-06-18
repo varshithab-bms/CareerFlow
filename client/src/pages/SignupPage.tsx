@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { AxiosError } from "axios";
-import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, Lock, Mail, ShieldCheck, User } from "lucide-react";
 import { getErrorMessage, useAuth } from "../context/AuthContext";
 
 type SignupErrors = {
@@ -10,21 +10,48 @@ type SignupErrors = {
   password?: string;
 };
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const blockedDomains = new Set([
+  "10minutemail.com",
+  "guerrillamail.com",
+  "mailinator.com",
+  "tempmail.com",
+  "temp-mail.org",
+  "yopmail.com",
+  "example.com",
+  "test.com",
+  "invalid.com",
+]);
+
 function validateSignup(name: string, email: string, password: string): SignupErrors {
   const errors: SignupErrors = {};
+  const normalizedEmail = email.trim().toLowerCase();
+  const domain = normalizedEmail.split("@")[1];
+
   if (name.trim().length > 60) {
     errors.name = "Name must be 60 characters or less.";
   }
-  if (!email.trim()) {
+
+  if (!normalizedEmail) {
     errors.email = "Email is required.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+  } else if (!emailPattern.test(normalizedEmail)) {
     errors.email = "Enter a valid email address.";
+  } else if (
+    !domain ||
+    blockedDomains.has(domain) ||
+    domain.endsWith(".test") ||
+    domain.endsWith(".invalid") ||
+    domain.endsWith(".localhost")
+  ) {
+    errors.email = "Use a real personal or work email address.";
   }
+
   if (!password) {
     errors.password = "Password is required.";
   } else if (password.length < 8) {
     errors.password = "Password must be at least 8 characters.";
   }
+
   return errors;
 }
 
@@ -48,6 +75,7 @@ export function SignupPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
     const nextErrors = validateSignup(name, email, password);
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -55,7 +83,7 @@ export function SignupPage() {
     setLoading(true);
     try {
       await signup({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
         name: name.trim() || undefined,
       });
@@ -74,28 +102,28 @@ export function SignupPage() {
           <div className="max-w-xl">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">
               <span className="h-2 w-2 rounded-full bg-amber-300" />
-              Built for visible career momentum
+              Email-first account setup
             </div>
             <h1 className="text-5xl font-bold tracking-tight">
-              Build a workspace recruiters can understand in seconds.
+              Create one account for all your interview prep.
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Organize your prep, sharpen your resume, and practice answers before the interview calendar fills up.
+              Your resume feedback, mock interviews, and prep tasks stay connected to your email.
             </p>
             <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-sm font-medium text-slate-200">Demo-ready workflow</p>
+              <p className="text-sm font-medium text-slate-200">Email account rules</p>
               <div className="mt-4 grid gap-3 text-sm text-slate-300">
                 <div className="flex items-center justify-between">
-                  <span>Upload resume</span>
-                  <span className="text-emerald-300">Analyze</span>
+                  <span>Valid email format</span>
+                  <span className="text-emerald-300">Required</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Choose target role</span>
-                  <span className="text-emerald-300">Practice</span>
+                  <span>Disposable emails</span>
+                  <span className="text-rose-300">Blocked</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Track follow-ups</span>
-                  <span className="text-emerald-300">Ship</span>
+                  <span>Password length</span>
+                  <span className="text-emerald-300">8+ chars</span>
                 </div>
               </div>
             </div>
@@ -117,11 +145,18 @@ export function SignupPage() {
               Create your account
             </h2>
             <p className="mt-2 text-sm text-slate-300">
-              Start with a focused workspace for interviews and applications.
+              Sign up with a valid email and password.
             </p>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white p-6 text-slate-900 shadow-2xl shadow-black/20 sm:p-8">
+            <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+              <div className="flex gap-2">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>Only valid personal or work emails can create accounts.</span>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-5" noValidate>
               {error && (
                 <div
@@ -131,6 +166,7 @@ export function SignupPage() {
                   {error}
                 </div>
               )}
+
               <div>
                 <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-slate-700">
                   Name <span className="font-normal text-slate-400">(optional)</span>
@@ -159,9 +195,10 @@ export function SignupPage() {
                   </p>
                 )}
               </div>
+
               <div>
                 <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Email
+                  Email address
                 </label>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -169,6 +206,7 @@ export function SignupPage() {
                     id="email"
                     type="email"
                     autoComplete="email"
+                    inputMode="email"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
@@ -177,16 +215,22 @@ export function SignupPage() {
                       }
                     }}
                     aria-invalid={Boolean(fieldErrors.email)}
-                    aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                    aria-describedby={fieldErrors.email ? "email-error" : "email-help"}
                     className="w-full rounded-lg border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm outline-none ring-brand/30 transition focus:border-brand focus:ring-2"
                   />
                 </div>
-                {fieldErrors.email && (
+                {fieldErrors.email ? (
                   <p id="email-error" className="mt-1.5 text-xs font-medium text-red-600">
                     {fieldErrors.email}
                   </p>
+                ) : (
+                  <p id="email-help" className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    Disposable and test emails are not accepted.
+                  </p>
                 )}
               </div>
+
               <div>
                 <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
                   Password
@@ -205,7 +249,7 @@ export function SignupPage() {
                       }
                     }}
                     aria-invalid={Boolean(fieldErrors.password)}
-                    aria-describedby={fieldErrors.password ? "password-error" : undefined}
+                    aria-describedby={fieldErrors.password ? "password-error" : "password-help"}
                     className="w-full rounded-lg border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm outline-none ring-brand/30 transition focus:border-brand focus:ring-2"
                   />
                 </div>
@@ -214,9 +258,12 @@ export function SignupPage() {
                     {fieldErrors.password}
                   </p>
                 ) : (
-                  <p className="mt-1.5 text-xs text-slate-500">At least 8 characters.</p>
+                  <p id="password-help" className="mt-1.5 text-xs text-slate-500">
+                    At least 8 characters.
+                  </p>
                 )}
               </div>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -229,12 +276,13 @@ export function SignupPage() {
                   </>
                 ) : (
                   <>
-                    Create account
+                    Create account with email
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </button>
             </form>
+
             <p className="mt-6 text-center text-sm text-slate-600">
               Already have an account?{" "}
               <Link to="/login" className="font-semibold text-brand hover:underline">

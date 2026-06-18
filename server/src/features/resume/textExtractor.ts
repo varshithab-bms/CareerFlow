@@ -1,14 +1,14 @@
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-
-const pdfParse = require("pdf-parse");
+import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
+  let parser: PDFParse | null = null;
+
   try {
-    const data = await pdfParse(buffer);
+    parser = new PDFParse({ data: buffer });
+    const data = await parser.getText();
 
     if (!data?.text || data.text.trim().length < 10) {
       throw new Error("PDF has no readable text");
@@ -18,6 +18,8 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   } catch (error) {
     console.error("PDF extraction error:", error);
     throw new Error("Failed to extract text from PDF");
+  } finally {
+    await parser?.destroy();
   }
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { AxiosError } from "axios";
-import { ArrowRight, Loader2, Lock, Mail } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
 import { getErrorMessage, useAuth } from "../context/AuthContext";
 
 type LoginErrors = {
@@ -9,16 +9,22 @@ type LoginErrors = {
   password?: string;
 };
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 function validateLogin(email: string, password: string): LoginErrors {
   const errors: LoginErrors = {};
-  if (!email.trim()) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!normalizedEmail) {
     errors.email = "Email is required.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+  } else if (!emailPattern.test(normalizedEmail)) {
     errors.email = "Enter a valid email address.";
   }
+
   if (!password) {
     errors.password = "Password is required.";
   }
+
   return errors;
 }
 
@@ -45,13 +51,14 @@ export function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
     const nextErrors = validateLogin(email, password);
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      await login(email.trim().toLowerCase(), password);
       navigate(from, { replace: true });
     } catch (err) {
       setError(getErrorMessage(err as AxiosError));
@@ -67,16 +74,16 @@ export function LoginPage() {
           <div className="max-w-xl">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              AI interview prep workspace
+              Email-secured interview workspace
             </div>
             <h1 className="text-5xl font-bold tracking-tight">
-              Turn job search chaos into a focused daily plan.
+              Sign in with the email tied to your prep history.
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Track tasks, improve resumes, and practice interviews from one clean recruiter-ready workspace.
+              Keep resume analysis, mock interviews, and task progress attached to one real account.
             </p>
             <div className="mt-8 grid grid-cols-3 gap-3">
-              {["Resume scoring", "Mock interviews", "Prep plans"].map((item) => (
+              {["Email login", "Private history", "Progress tracking"].map((item) => (
                 <div
                   key={item}
                   className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200"
@@ -99,15 +106,20 @@ export function LoginPage() {
               </span>
               <span className="text-lg font-semibold">CareerFlow</span>
             </Link>
-            <h2 className="mt-8 text-3xl font-bold tracking-tight">
-              Welcome back
-            </h2>
+            <h2 className="mt-8 text-3xl font-bold tracking-tight">Welcome back</h2>
             <p className="mt-2 text-sm text-slate-300">
-              Sign in to continue building your interview pipeline.
+              Use your registered email and password to continue.
             </p>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white p-6 text-slate-900 shadow-2xl shadow-black/20 sm:p-8">
+            <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+              <div className="flex gap-2">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>Authentication is email-based. Use the same email you signed up with.</span>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-5" noValidate>
               {error && (
                 <div
@@ -117,12 +129,10 @@ export function LoginPage() {
                   {error}
                 </div>
               )}
+
               <div>
-                <label
-                  htmlFor="email"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Email
+                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Email address
                 </label>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -130,6 +140,7 @@ export function LoginPage() {
                     id="email"
                     type="email"
                     autoComplete="email"
+                    inputMode="email"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
@@ -138,21 +149,24 @@ export function LoginPage() {
                       }
                     }}
                     aria-invalid={Boolean(fieldErrors.email)}
-                    aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                    aria-describedby={fieldErrors.email ? "email-error" : "email-help"}
                     className="w-full rounded-lg border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm outline-none ring-brand/30 transition focus:border-brand focus:ring-2"
                   />
                 </div>
-                {fieldErrors.email && (
+                {fieldErrors.email ? (
                   <p id="email-error" className="mt-1.5 text-xs font-medium text-red-600">
                     {fieldErrors.email}
                   </p>
+                ) : (
+                  <p id="email-help" className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    Personal or work email only.
+                  </p>
                 )}
               </div>
+
               <div>
-                <label
-                  htmlFor="password"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
+                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
                   Password
                 </label>
                 <div className="relative">
@@ -179,6 +193,7 @@ export function LoginPage() {
                   </p>
                 )}
               </div>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -191,12 +206,13 @@ export function LoginPage() {
                   </>
                 ) : (
                   <>
-                    Sign in
+                    Sign in with email
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </button>
             </form>
+
             <p className="mt-6 text-center text-sm text-slate-600">
               Don&apos;t have an account?{" "}
               <Link to="/signup" className="font-semibold text-brand hover:underline">
