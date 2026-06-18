@@ -1,7 +1,17 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { AxiosError } from "axios";
-import { ArrowRight, CheckCircle2, Loader2, Lock, Mail, ShieldCheck, User } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Mail,
+  ShieldCheck,
+  User,
+} from "lucide-react";
 import { getErrorMessage, useAuth } from "../context/AuthContext";
 
 type SignupErrors = {
@@ -11,6 +21,10 @@ type SignupErrors = {
 };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+const strongPassword =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
 const blockedDomains = new Set([
   "10minutemail.com",
   "guerrillamail.com",
@@ -23,8 +37,13 @@ const blockedDomains = new Set([
   "invalid.com",
 ]);
 
-function validateSignup(name: string, email: string, password: string): SignupErrors {
+function validateSignup(
+  name: string,
+  email: string,
+  password: string
+): SignupErrors {
   const errors: SignupErrors = {};
+
   const normalizedEmail = email.trim().toLowerCase();
   const domain = normalizedEmail.split("@")[1];
 
@@ -48,8 +67,9 @@ function validateSignup(name: string, email: string, password: string): SignupEr
 
   if (!password) {
     errors.password = "Password is required.";
-  } else if (password.length < 8) {
-    errors.password = "Password must be at least 8 characters.";
+  } else if (!strongPassword.test(password)) {
+    errors.password =
+      "Use at least 8 characters with uppercase, lowercase, and a number.";
   }
 
   return errors;
@@ -62,6 +82,9 @@ export function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<SignupErrors>({});
   const [loading, setLoading] = useState(false);
@@ -74,20 +97,29 @@ export function SignupPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+
+    if (loading || !isReady) return;
+
     setError(null);
 
     const nextErrors = validateSignup(name, email, password);
+
     setFieldErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
 
     setLoading(true);
+
     try {
       await signup({
         email: email.trim().toLowerCase(),
         password,
         name: name.trim() || undefined,
       });
-      navigate("/dashboard", { replace: true });
+
+      // Redirect handled by useEffect after auth state updates
     } catch (err) {
       setError(getErrorMessage(err as AxiosError));
     } finally {
@@ -104,26 +136,37 @@ export function SignupPage() {
               <span className="h-2 w-2 rounded-full bg-amber-300" />
               Email-first account setup
             </div>
+
             <h1 className="text-5xl font-bold tracking-tight">
               Create one account for all your interview prep.
             </h1>
+
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Your resume feedback, mock interviews, and prep tasks stay connected to your email.
+              Your resume feedback, mock interviews, and prep tasks stay
+              connected to your email.
             </p>
+
             <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-sm font-medium text-slate-200">Email account rules</p>
+              <p className="text-sm font-medium text-slate-200">
+                Email account rules
+              </p>
+
               <div className="mt-4 grid gap-3 text-sm text-slate-300">
                 <div className="flex items-center justify-between">
                   <span>Valid email format</span>
                   <span className="text-emerald-300">Required</span>
                 </div>
+
                 <div className="flex items-center justify-between">
                   <span>Disposable emails</span>
                   <span className="text-rose-300">Blocked</span>
                 </div>
+
                 <div className="flex items-center justify-between">
-                  <span>Password length</span>
-                  <span className="text-emerald-300">8+ chars</span>
+                  <span>Password strength</span>
+                  <span className="text-emerald-300">
+                    8+ chars, Aa1
+                  </span>
                 </div>
               </div>
             </div>
@@ -139,13 +182,18 @@ export function SignupPage() {
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-sm font-bold text-brand">
                 CF
               </span>
-              <span className="text-lg font-semibold">CareerFlow</span>
+
+              <span className="text-lg font-semibold">
+                CareerFlow
+              </span>
             </Link>
+
             <h2 className="mt-8 text-3xl font-bold tracking-tight">
               Create your account
             </h2>
+
             <p className="mt-2 text-sm text-slate-300">
-              Sign up with a valid email and password.
+              Sign up with a valid email and secure password.
             </p>
           </div>
 
@@ -153,11 +201,18 @@ export function SignupPage() {
             <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
               <div className="flex gap-2">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Only valid personal or work emails can create accounts.</span>
+
+                <span>
+                  Only valid personal or work emails can create accounts.
+                </span>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-5"
+              noValidate
+            >
               {error && (
                 <div
                   className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
@@ -168,11 +223,19 @@ export function SignupPage() {
               )}
 
               <div>
-                <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Name <span className="font-normal text-slate-400">(optional)</span>
+                <label
+                  htmlFor="name"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Name{" "}
+                  <span className="font-normal text-slate-400">
+                    (optional)
+                  </span>
                 </label>
+
                 <div className="relative">
                   <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
                   <input
                     id="name"
                     type="text"
@@ -180,28 +243,43 @@ export function SignupPage() {
                     value={name}
                     onChange={(e) => {
                       setName(e.target.value);
+
                       if (fieldErrors.name) {
-                        setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          name: undefined,
+                        }));
                       }
                     }}
                     aria-invalid={Boolean(fieldErrors.name)}
-                    aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                    aria-describedby={
+                      fieldErrors.name ? "name-error" : undefined
+                    }
                     className="w-full rounded-lg border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm outline-none ring-brand/30 transition focus:border-brand focus:ring-2"
                   />
                 </div>
+
                 {fieldErrors.name && (
-                  <p id="name-error" className="mt-1.5 text-xs font-medium text-red-600">
+                  <p
+                    id="name-error"
+                    className="mt-1.5 text-xs font-medium text-red-600"
+                  >
                     {fieldErrors.name}
                   </p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="email"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
                   Email address
                 </label>
+
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
                   <input
                     id="email"
                     type="email"
@@ -210,21 +288,36 @@ export function SignupPage() {
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
+
                       if (fieldErrors.email) {
-                        setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          email: undefined,
+                        }));
                       }
                     }}
                     aria-invalid={Boolean(fieldErrors.email)}
-                    aria-describedby={fieldErrors.email ? "email-error" : "email-help"}
+                    aria-describedby={
+                      fieldErrors.email
+                        ? "email-error"
+                        : "email-help"
+                    }
                     className="w-full rounded-lg border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm outline-none ring-brand/30 transition focus:border-brand focus:ring-2"
                   />
                 </div>
+
                 {fieldErrors.email ? (
-                  <p id="email-error" className="mt-1.5 text-xs font-medium text-red-600">
+                  <p
+                    id="email-error"
+                    className="mt-1.5 text-xs font-medium text-red-600"
+                  >
                     {fieldErrors.email}
                   </p>
                 ) : (
-                  <p id="email-help" className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
+                  <p
+                    id="email-help"
+                    className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500"
+                  >
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                     Disposable and test emails are not accepted.
                   </p>
@@ -232,51 +325,91 @@ export function SignupPage() {
               </div>
 
               <div>
-                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="password"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
                   Password
                 </label>
+
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
                   <input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
+
                       if (fieldErrors.password) {
-                        setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          password: undefined,
+                        }));
                       }
                     }}
                     aria-invalid={Boolean(fieldErrors.password)}
-                    aria-describedby={fieldErrors.password ? "password-error" : "password-help"}
-                    className="w-full rounded-lg border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm outline-none ring-brand/30 transition focus:border-brand focus:ring-2"
+                    aria-describedby={
+                      fieldErrors.password
+                        ? "password-error"
+                        : "password-help"
+                    }
+                    className="w-full rounded-lg border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm outline-none ring-brand/30 transition focus:border-brand focus:ring-2"
                   />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowPassword((prev) => !prev)
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+                    aria-label={
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
+
                 {fieldErrors.password ? (
-                  <p id="password-error" className="mt-1.5 text-xs font-medium text-red-600">
+                  <p
+                    id="password-error"
+                    className="mt-1.5 text-xs font-medium text-red-600"
+                  >
                     {fieldErrors.password}
                   </p>
                 ) : (
-                  <p id="password-help" className="mt-1.5 text-xs text-slate-500">
-                    At least 8 characters.
+                  <p
+                    id="password-help"
+                    className="mt-1.5 text-xs text-slate-500"
+                  >
+                    Use at least 8 characters with uppercase,
+                    lowercase, and a number.
                   </p>
                 )}
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !isReady}
                 className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Creating account
+                    Creating account...
                   </>
                 ) : (
                   <>
-                    Create account with email
+                    Create account
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -285,7 +418,10 @@ export function SignupPage() {
 
             <p className="mt-6 text-center text-sm text-slate-600">
               Already have an account?{" "}
-              <Link to="/login" className="font-semibold text-brand hover:underline">
+              <Link
+                to="/login"
+                className="font-semibold text-brand hover:underline"
+              >
                 Sign in
               </Link>
             </p>
