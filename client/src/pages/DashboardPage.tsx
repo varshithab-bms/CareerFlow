@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "../components/AppLayout";
@@ -17,6 +18,43 @@ import { getResumeHistory } from "../features/resume/api";
 import { getInterviewHistory } from "../features/interview/api";
 import { useTasksQuery } from "../features/tasks/hooks";
 
+// ---------- shared helpers ----------
+
+type Tone = "text-slate-500" | "text-emerald-600" | "text-amber-600" | "text-rose-600";
+
+/** Clamp a score into [0, 100]; defends against bad upstream data. */
+function clampPercent(value: number): number {
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+/** Shared tone thresholds so every stat reads the same scale. */
+function toneForScore(score: number | null, thresholds: { good: number; ok: number }): Tone {
+  if (score === null) return "text-slate-500";
+  if (score >= thresholds.good) return "text-emerald-600";
+  if (score >= thresholds.ok) return "text-amber-600";
+  return "text-rose-600";
+}
+
+const SCORE_THRESHOLDS = { good: 80, ok: 60 };
+const COMPLETION_THRESHOLDS = { good: 80, ok: 40 };
+
+interface PrepStat {
+  label: string;
+  value: string;
+  detail: string;
+  tone: Tone;
+  /** Percent width for the progress bar, or null when there's no score to show yet. */
+  widthPercent: number | null;
+}
+
+interface RecommendedAction {
+  title: string;
+  body: string;
+  to: string;
+  cta: string;
+  checks: string[];
+}
+
 export function DashboardPage() {
   const resumesQuery = useQuery({
     queryKey: ["dashboard", "resume-history"],
@@ -34,116 +72,122 @@ export function DashboardPage() {
   const interviews = interviewsQuery.data ?? [];
   const tasks = tasksQuery.data ?? [];
 
-  const latestResume = [...resumes].sort(
-    (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime(),
-  )[0];
+  const isLoading = resumesQuery.isLoading || interviewsQuery.isLoading || tasksQuery.isLoading;
+  const isError = resumesQuery.isError || interviewsQuery.isError || tasksQuery.isError;
+
+  const latestResume = useMemo(
+    () =>
+      [...resumes].sort(
+        (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime(),
+      )[0],
+    [resumes],
+  );
+
   const latestResumeScore =
     latestResume?.analysis?.atsScore ?? latestResume?.analysis?.baseAnalysis?.atsScore ?? null;
 
-  const completedInterviews = interviews.filter(
-    (interview) => interview.isComplete || interview.finalScore !== undefined,
-  );
-  const completedInterviewCount = completedInterviews.length;
-  const scoredInterviews = completedInterviews.filter(
-    (interview) => typeof interview.finalScore === "number",
-  );
-  const averageInterviewScore = scoredInterviews.length
-    ? Math.round(
-        scoredInterviews.reduce((total, interview) => total + (interview.finalScore ?? 0), 0) /
-          scoredInterviews.length,
+  const { completedInterviewCount, averageInterviewScore } = useMemo(() => {
+    const completed = interviews.filter(
+      (interview) => interview.isComplete || interview.finalScore !== undefined,
+    );
+    const scored = completed.filter((interview) => typeof interview.finalScore === "number");
+    const average = scored.length
+      ? Math.round(
+        scored.reduce((total, interview) => total + (interview.finalScore ?? 0), 0) /
+        scored.length,
       )
-    : null;
-  const doneTasks = tasks.filter((task) => task.status === "done").length;
+      : null;
+    return { completedInterviewCount: completed.length, averageInterviewScore: average };
+  }, [interviews]);
+
+  const doneTasks = useMemo(() => tasks.filter((task) => task.status === "done").length, [tasks]);
   const taskCompletion = tasks.length ? Math.round((doneTasks / tasks.length) * 100) : null;
 
-  const prepStats = [
-    {
-      label: "Resume readiness",
-      value: latestResumeScore === null ? "Not started" : `${latestResumeScore}%`,
-      detail: latestResume ? latestResume.fileName || "Latest resume" : "Upload a resume to begin",
-      tone:
-        latestResumeScore === null
-          ? "text-slate-500"
-          : latestResumeScore >= 80
-            ? "text-emerald-600"
-            : latestResumeScore >= 60
-              ? "text-amber-600"
-              : "text-rose-600",
-      width: `${latestResumeScore ?? 0}%`,
-    },
-    {
-      label: "Mock interviews",
-      value:
-        averageInterviewScore === null
-          ? completedInterviewCount
-            ? `${completedInterviewCount} complete`
-            : "Not started"
-          : `${averageInterviewScore}% avg`,
-      detail: interviews.length
-        ? `${completedInterviewCount} completed of ${interviews.length} total session${
-            interviews.length === 1 ? "" : "s"
+  const prepStats: PrepStat[] = useMemo(
+    () => [
+      {
+        label: "Resume readiness",
+        value: latestResumeScore === null ? "Not started" : `${clampPercent(latestResumeScore)}%`,
+        detail: latestResume ? latestResume.fileName || "Latest resume" : "Upload a resume to begin",
+        tone: toneForScore(latestResumeScore, SCORE_THRESHOLDS),
+        widthPercent: latestResumeScore === null ? null : clampPercent(latestResumeScore),
+      },
+      {
+        label: "Mock interviews",
+        value:
+          averageInterviewScore === null
+            ? completedInterviewCount
+              ? `${completedInterviewCount} complete`
+              : "Not started"
+            : `${clampPercent(averageInterviewScore)}% avg`,
+        detail: interviews.length
+          ? `${completedInterviewCount} completed of ${interviews.length} total session${interviews.length === 1 ? "" : "s"
           }`
-        : "Start a mock interview",
-      tone:
-        averageInterviewScore === null
-          ? completedInterviewCount
-            ? "text-blue-600"
-            : "text-slate-500"
-          : averageInterviewScore >= 80
-            ? "text-emerald-600"
-            : averageInterviewScore >= 60
-              ? "text-amber-600"
-              : "text-rose-600",
-      width: averageInterviewScore === null ? null : `${averageInterviewScore}%`,
-    },
-    {
-      label: "Task completion",
-      value: taskCompletion === null ? "No tasks" : `${taskCompletion}%`,
-      detail: tasks.length ? `${doneTasks} of ${tasks.length} tasks done` : "Add your first action item",
-      tone:
-        taskCompletion === null
-          ? "text-slate-500"
-          : taskCompletion >= 80
-            ? "text-emerald-600"
-            : taskCompletion >= 40
-              ? "text-amber-600"
-              : "text-rose-600",
-      width: `${taskCompletion ?? 0}%`,
-    },
-  ];
+          : "Start a mock interview",
+        tone:
+          averageInterviewScore === null
+            ? completedInterviewCount
+              ? "text-blue-600"
+              : "text-slate-500"
+            : toneForScore(averageInterviewScore, SCORE_THRESHOLDS),
+        widthPercent: averageInterviewScore === null ? null : clampPercent(averageInterviewScore),
+      },
+      {
+        label: "Task completion",
+        value: taskCompletion === null ? "No tasks" : `${taskCompletion}%`,
+        detail: tasks.length ? `${doneTasks} of ${tasks.length} tasks done` : "Add your first action item",
+        tone: toneForScore(taskCompletion, COMPLETION_THRESHOLDS),
+        widthPercent: taskCompletion,
+      },
+    ],
+    [
+      latestResumeScore,
+      latestResume,
+      averageInterviewScore,
+      completedInterviewCount,
+      interviews.length,
+      taskCompletion,
+      tasks.length,
+      doneTasks,
+    ],
+  );
 
-  const recommendedAction =
-    latestResumeScore === null
-      ? {
-          title: "Analyze your resume",
-          body: "Start with a resume scan so CareerFlow can surface role-specific gaps.",
-          to: "/resume-enhancer",
-          cta: "Upload resume",
-          checks: ["Get ATS score", "Find missing keywords"],
-        }
-      : completedInterviewCount === 0
-        ? {
-            title: "Run your first mock interview",
-            body: "Use your resume feedback to practice answers for your target role.",
-            to: "/mock-interview",
-            cta: "Start interview",
-            checks: ["Practice one session", "Review answer feedback"],
-          }
-        : tasks.length === 0 || doneTasks < tasks.length
-          ? {
-              title: "Turn feedback into tasks",
-              body: "Create concrete action items from resume and interview feedback.",
-              to: "/tasks",
-              cta: "Open tasks",
-              checks: ["Prioritize weak spots", "Complete the next action"],
-            }
-          : {
-              title: "Generate a prep roadmap",
-              body: "Keep momentum with a role-specific prep plan and learning resources.",
-              to: "/prep-sessions",
-              cta: "Build plan",
-              checks: ["Choose target role", "Review three sessions"],
-            };
+  const recommendedAction: RecommendedAction = useMemo(() => {
+    if (latestResumeScore === null) {
+      return {
+        title: "Analyze your resume",
+        body: "Start with a resume scan so CareerFlow can surface role-specific gaps.",
+        to: "/resume-enhancer",
+        cta: "Upload resume",
+        checks: ["Get ATS score", "Find missing keywords"],
+      };
+    }
+    if (completedInterviewCount === 0) {
+      return {
+        title: "Run your first mock interview",
+        body: "Use your resume feedback to practice answers for your target role.",
+        to: "/mock-interview",
+        cta: "Start interview",
+        checks: ["Practice one session", "Review answer feedback"],
+      };
+    }
+    if (tasks.length === 0 || doneTasks < tasks.length) {
+      return {
+        title: "Turn feedback into tasks",
+        body: "Create concrete action items from resume and interview feedback.",
+        to: "/tasks",
+        cta: "Open tasks",
+        checks: ["Prioritize weak spots", "Complete the next action"],
+      };
+    }
+    return {
+      title: "Generate a prep roadmap",
+      body: "Keep momentum with a role-specific prep plan and learning resources.",
+      to: "/prep-sessions",
+      cta: "Build plan",
+      checks: ["Choose target role", "Review three sessions"],
+    };
+  }, [latestResumeScore, completedInterviewCount, tasks.length, doneTasks]);
 
   const modules = [
     {
@@ -170,9 +214,7 @@ export function DashboardPage() {
       icon: BookOpen,
       accent: "bg-indigo-50 text-indigo-700 border-indigo-100",
     },
-  ];
-
-  const isLoading = resumesQuery.isLoading || interviewsQuery.isLoading || tasksQuery.isLoading;
+  ] as const;
 
   return (
     <AppLayout>
@@ -198,43 +240,59 @@ export function DashboardPage() {
         </Link>
       </div>
 
+      {isError && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Some of your progress data couldn't be loaded. Numbers below may be incomplete —
+          try refreshing the page.
+        </div>
+      )}
+
       <div className="mb-8 grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
         <section className="soft-panel p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-slate-500">Progress dashboard</p>
-              <h2 className="mt-1 text-xl font-bold text-slate-950">
-                Your preparation signals
-              </h2>
+              <h2 className="mt-1 text-xl font-bold text-slate-950">Your preparation signals</h2>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-600">
               <BarChart3 className="h-5 w-5" />
             </div>
           </div>
           <div className="mt-6 space-y-5">
-            {prepStats.map((stat) => (
-              <div key={stat.label}>
-                <div className="mb-2 flex items-start justify-between gap-3 text-sm">
-                  <div>
-                    <span className="font-medium text-slate-700">{stat.label}</span>
-                    <p className="mt-0.5 text-xs text-slate-500">{stat.detail}</p>
+            {isLoading ? (
+              <div className="space-y-5">
+                {[0, 1, 2].map((key) => (
+                  <div key={key} className="animate-pulse">
+                    <div className="mb-2 h-4 w-1/2 rounded bg-slate-100" />
+                    <div className="h-2 w-full rounded-full bg-slate-100" />
                   </div>
-                  <span className={`shrink-0 font-bold ${stat.tone}`}>{stat.value}</span>
-                </div>
-                {stat.width ? (
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full bg-brand transition-all duration-700"
-                      style={{ width: stat.width }}
-                    />
-                  </div>
-                ) : (
-                  <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-                    No score available yet
-                  </div>
-                )}
+                ))}
               </div>
-            ))}
+            ) : (
+              prepStats.map((stat) => (
+                <div key={stat.label}>
+                  <div className="mb-2 flex items-start justify-between gap-3 text-sm">
+                    <div>
+                      <span className="font-medium text-slate-700">{stat.label}</span>
+                      <p className="mt-0.5 text-xs text-slate-500">{stat.detail}</p>
+                    </div>
+                    <span className={`shrink-0 font-bold ${stat.tone}`}>{stat.value}</span>
+                  </div>
+                  {stat.widthPercent !== null ? (
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-brand transition-all duration-700"
+                        style={{ width: `${stat.widthPercent}%` }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+                      No score available yet
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </section>
 
@@ -284,9 +342,7 @@ export function DashboardPage() {
                 </div>
                 <p className="mt-5 text-sm font-semibold text-slate-500">{module.eyebrow}</p>
                 <p className="mt-1 text-xl font-bold text-slate-950">{module.title}</p>
-                <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
-                  {module.description}
-                </p>
+                <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">{module.description}</p>
                 <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-brand">
                   Open module
                   <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
