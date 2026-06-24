@@ -32,6 +32,8 @@ export type PrepSessionDto = {
   durationHint?: string;
   objectives?: string;
   topics: PrepTopicDto[];
+  dsaTopics?: string[];
+  aptitudeTopics?: string[];
 };
 
 export type PrepPlanDto = {
@@ -79,6 +81,8 @@ async function enrichSessionsWithYoutube(
       durationHint: session.durationHint,
       objectives: session.objectives,
       topics,
+      dsaTopics: session.dsaTopics,
+      aptitudeTopics: session.aptitudeTopics,
     });
   }
 
@@ -105,7 +109,7 @@ Work through the sessions in order, practice each topic, and use the linked reso
 
   return {
     jobRole: plan.role,
-    model: "gemini-2.5-flash",
+    model: plan.matchedTemplate === "ai-generated" ? "gemini+groq" : "rule-based",
     overviewMarkdown,
     sessions,
     youtubeConfigured: Boolean(env.YOUTUBE_API_KEY),

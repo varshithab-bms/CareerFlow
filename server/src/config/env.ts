@@ -23,6 +23,12 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required"),
   GEMINI_MODEL: z.string().default("gemini-2.5-pro"),
   GEMINI_FALLBACK_MODEL: z.string().default("gemini-2.5-flash"),
+  GROQ_API_KEY: z.preprocess((v) => {
+    if (v === "" || v === undefined) return undefined;
+    const s = String(v).trim();
+    return s === "" ? undefined : s;
+  }, z.string().min(1).optional()),
+  GROQ_MODEL: z.string().default("llama-3.1-8b-instant"),
   MAX_FILE_SIZE: z.coerce.number().int().positive().default(5242880),
 });
 

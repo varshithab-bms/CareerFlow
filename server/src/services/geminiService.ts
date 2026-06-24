@@ -1,39 +1,12 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { env } from "../config/env.js";
-import {
-  generateContentWithRetry,
-  getGeminiErrorMessage,
-  isGeminiRateLimitError,
-} from "./geminiRetry.js";
+import { callAI } from "./callAI.js";
 
-const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-
-async function generateWithFallback(prompt: string) {
-  const model = genAI.getGenerativeModel({ model: env.GEMINI_MODEL });
-  
-  try {
-    return await generateContentWithRetry(model, prompt, {
-      label: env.GEMINI_MODEL,
-      retries: 3,
-    });
-  } catch (error: any) {
-    const message = getGeminiErrorMessage(error);
-    const cooldownMs = isGeminiRateLimitError(error) ? 3000 : 0;
-
-    console.warn(
-      `Primary model failed (${message}). Trying fallback model${cooldownMs ? " after cooldown" : ""}...`,
-    );
-
-    if (cooldownMs) {
-      await new Promise((resolve) => setTimeout(resolve, cooldownMs));
-    }
-
-    const fallbackModel = genAI.getGenerativeModel({ model: env.GEMINI_FALLBACK_MODEL });
-    return generateContentWithRetry(fallbackModel, prompt, {
-      label: env.GEMINI_FALLBACK_MODEL,
-      retries: 2,
-    });
+function extractJson(text: string): string {
+  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Failed to parse AI response as JSON");
   }
+  return jsonMatch[0];
 }
 
 export async function analyzeResume(resumeText: string, jobTitle: string) {
@@ -86,19 +59,13 @@ JSON format:
 Resume Text:
 ${resumeText}`;
 
-  const result = await generateWithFallback(prompt);
-  let responseText = result.response.text();
-
-  // Clean up response text if it contains markdown backticks
-  responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+  const responseText = await callAI(prompt);
+  const jsonString = extractJson(responseText);
 
   try {
-    // Attempt to find JSON if there's surrounding text
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    const jsonString = jsonMatch ? jsonMatch[0] : responseText;
     return JSON.parse(jsonString);
   } catch (error) {
-    console.error("Failed to parse Gemini response:", responseText);
+    console.error("Failed to parse resume analysis response:", responseText);
     throw new Error("Failed to parse resume analysis results. Please try again.");
   }
 }
@@ -136,15 +103,8 @@ JSON format:
   "jobDescription": "string"
 }`;
 
-  const result = await generateWithFallback(prompt);
-  const responseText = result.response.text();
-
-  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Failed to parse Gemini response as JSON");
-  }
-
-  return JSON.parse(jsonMatch[0]);
+  const responseText = await callAI(prompt);
+  return JSON.parse(extractJson(responseText));
 }
 
 export async function generateInterviewQuestions(
@@ -181,15 +141,9 @@ Return ONLY valid JSON with this format:
   ]
 }`;
 
-  const result = await generateWithFallback(prompt);
-  const responseText = result.response.text();
-
-  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Failed to parse Gemini response as JSON");
-  }
-
-  return JSON.parse(jsonMatch[0]);
+  const cacheKey = `interview-q:${role.trim().toLowerCase()}:${difficulty}`;
+  const responseText = await callAI(prompt, cacheKey);
+  return JSON.parse(extractJson(responseText));
 }
 
 export async function evaluateInterviewAnswer(
@@ -215,15 +169,8 @@ Evaluate this answer critically. Return ONLY valid JSON:
 
 Be realistic like a real interviewer. Do not praise weak answers unnecessarily.`;
 
-  const result = await generateWithFallback(prompt);
-  const responseText = result.response.text();
-
-  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Failed to parse Gemini response as JSON");
-  }
-
-  return JSON.parse(jsonMatch[0]);
+  const responseText = await callAI(prompt);
+  return JSON.parse(extractJson(responseText));
 }
 
 export async function generateFollowUpQuestion(
@@ -251,13 +198,6 @@ Return ONLY valid JSON:
   "reasoning": "string (why this question)"
 }`;
 
-  const result = await generateWithFallback(prompt);
-  const responseText = result.response.text();
-
-  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Failed to parse Gemini response as JSON");
-  }
-
-  return JSON.parse(jsonMatch[0]);
+  const responseText = await callAI(prompt);
+  return JSON.parse(extractJson(responseText));
 }

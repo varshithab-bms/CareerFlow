@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "../components/AppLayout";
 import { SkeletonCard } from "../components/Skeleton";
@@ -6,18 +7,68 @@ import {
   ArrowRight,
   BarChart3,
   BookOpen,
+  BrainCircuit,
   CheckCircle2,
   ClipboardCheck,
+  Code2,
   FileText,
   Mic2,
+  Settings,
   Sparkles,
   Target,
 } from "lucide-react";
 import { getResumeHistory } from "../features/resume/api";
 import { getInterviewHistory } from "../features/interview/api";
 import { useTasksQuery } from "../features/tasks/hooks";
+import {
+  getAptitudeWeeklyStats,
+  getDsaWeeklyCount,
+  getWeeklyInterviewCount,
+  loadWeeklyGoals,
+  progressPct,
+  saveWeeklyGoals,
+  type WeeklyGoals,
+} from "../lib/weeklyProgress";
+
+function refreshLocalWeeklyStats() {
+  return {
+    dsaCount: getDsaWeeklyCount(),
+    aptitude: getAptitudeWeeklyStats(),
+  };
+}
 
 export function DashboardPage() {
+  const [weeklyGoals, setWeeklyGoals] = useState<WeeklyGoals>(loadWeeklyGoals);
+  const [goalsOpen, setGoalsOpen] = useState(false);
+  const goalsRef = useRef<HTMLDivElement>(null);
+  const [localWeeklyStats, setLocalWeeklyStats] = useState(refreshLocalWeeklyStats);
+
+  useEffect(() => {
+    saveWeeklyGoals(weeklyGoals);
+  }, [weeklyGoals]);
+
+  useEffect(() => {
+    const refresh = () => setLocalWeeklyStats(refreshLocalWeeklyStats());
+    refresh();
+    window.addEventListener("focus", refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!goalsOpen) return;
+    const onClick = (event: MouseEvent) => {
+      if (!goalsRef.current?.contains(event.target as Node)) {
+        setGoalsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [goalsOpen]);
+
   const resumesQuery = useQuery({
     queryKey: ["dashboard", "resume-history"],
     queryFn: getResumeHistory,
@@ -55,6 +106,43 @@ export function DashboardPage() {
     : null;
   const doneTasks = tasks.filter((task) => task.status === "done").length;
   const taskCompletion = tasks.length ? Math.round((doneTasks / tasks.length) * 100) : null;
+
+  const weeklyInterviewCount = getWeeklyInterviewCount(interviews);
+  const { dsaCount } = localWeeklyStats;
+  const { count: aptitudeQuizCount, avgAccuracy: aptitudeAvgAccuracy } = localWeeklyStats.aptitude;
+
+  const weeklyProgressStats = [
+    {
+      label: "DSA",
+      value: `${dsaCount} problem${dsaCount === 1 ? "" : "s"} solved`,
+      detail: `${dsaCount} of ${weeklyGoals.dsa} weekly goal`,
+      current: dsaCount,
+      goal: weeklyGoals.dsa,
+      barColor: "bg-fuchsia-500",
+      tone: "text-fuchsia-600",
+    },
+    {
+      label: "Aptitude",
+      value:
+        aptitudeQuizCount === 0
+          ? "0 quizzes completed"
+          : `${aptitudeQuizCount} quiz${aptitudeQuizCount === 1 ? "" : "zes"} completed / ${aptitudeAvgAccuracy}% avg accuracy`,
+      detail: `${aptitudeQuizCount} of ${weeklyGoals.aptitude} weekly goal`,
+      current: aptitudeQuizCount,
+      goal: weeklyGoals.aptitude,
+      barColor: "bg-rose-500",
+      tone: "text-rose-600",
+    },
+    {
+      label: "Mock Interviews",
+      value: `${weeklyInterviewCount} session${weeklyInterviewCount === 1 ? "" : "s"} completed`,
+      detail: `${weeklyInterviewCount} of ${weeklyGoals.interviews} weekly goal`,
+      current: weeklyInterviewCount,
+      goal: weeklyGoals.interviews,
+      barColor: "bg-emerald-500",
+      tone: "text-emerald-600",
+    },
+  ];
 
   const prepStats = [
     {
@@ -169,6 +257,22 @@ export function DashboardPage() {
       icon: BookOpen,
       accent: "bg-indigo-50 text-indigo-700 border-indigo-100",
     },
+    {
+      to: "/dsa-practice",
+      eyebrow: "DSA Practice",
+      title: "Algorithms & Data Structures",
+      description: "LeetCode problems by topic →",
+      icon: Code2,
+      accent: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100",
+    },
+    {
+      to: "/aptitude",
+      eyebrow: "Aptitude",
+      title: "Aptitude Practice",
+      description: "Quant, Logic & Verbal →",
+      icon: BrainCircuit,
+      accent: "bg-rose-50 text-rose-700 border-rose-100",
+    },
   ];
 
   const isLoading = resumesQuery.isLoading || interviewsQuery.isLoading || tasksQuery.isLoading;
@@ -196,6 +300,77 @@ export function DashboardPage() {
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
+
+      <section className="soft-panel mb-8 p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">Weekly targets</p>
+            <h2 className="mt-1 text-xl font-bold text-slate-950">Your Progress This Week</h2>
+          </div>
+          <div className="relative" ref={goalsRef}>
+            <button
+              type="button"
+              onClick={() => setGoalsOpen((open) => !open)}
+              className="focus-ring rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-600 hover:bg-slate-100"
+              aria-label="Edit weekly goals"
+              aria-expanded={goalsOpen}
+            >
+              <Settings className="h-5 w-5" />
+            </button>
+            {goalsOpen ? (
+              <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
+                <p className="text-sm font-semibold text-slate-900">Weekly goals</p>
+                <div className="mt-3 space-y-3">
+                  {(
+                    [
+                      { key: "dsa" as const, label: "DSA problems" },
+                      { key: "aptitude" as const, label: "Aptitude quizzes" },
+                      { key: "interviews" as const, label: "Mock interviews" },
+                    ] as const
+                  ).map(({ key, label }) => (
+                    <label key={key} className="block text-xs font-medium text-slate-600">
+                      {label}
+                      <input
+                        type="number"
+                        min={1}
+                        max={99}
+                        value={weeklyGoals[key]}
+                        onChange={(event) => {
+                          const parsed = parseInt(event.target.value, 10);
+                          setWeeklyGoals((prev) => ({
+                            ...prev,
+                            [key]: Number.isFinite(parsed) && parsed > 0 ? parsed : prev[key],
+                          }));
+                        }}
+                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-slate-900"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+        <div className="mt-6 space-y-5">
+          {weeklyProgressStats.map((stat) => (
+            <div key={stat.label}>
+              <div className="mb-2 flex items-start justify-between gap-3 text-sm">
+                <div>
+                  <span className="font-medium text-slate-700">{stat.label}</span>
+                  <p className="mt-0.5 text-xs text-slate-500">{stat.detail}</p>
+                </div>
+                <span className={`shrink-0 font-bold ${stat.tone}`}>{stat.value}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${stat.barColor}`}
+                  style={{ width: `${progressPct(stat.current, stat.goal)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <div className="mb-8 grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
         <section className="soft-panel p-5 sm:p-6">
@@ -263,7 +438,7 @@ export function DashboardPage() {
         </section>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {isLoading ? (
           <>
             <SkeletonCard />
@@ -294,7 +469,7 @@ export function DashboardPage() {
             ))}
             <Link
               to="/tasks"
-              className="interactive-card group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card md:col-span-3"
+              className="interactive-card group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card sm:col-span-2 lg:col-span-3 xl:col-span-5"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
