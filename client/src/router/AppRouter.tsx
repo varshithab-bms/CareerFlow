@@ -9,6 +9,8 @@ import { PrepSessionsPage } from "../pages/PrepSessionsPage";
 import { LoginPage } from "../pages/LoginPage";
 import { SignupPage } from "../pages/SignupPage";
 import { TasksPage } from "../pages/TasksPage";
+import { DSAPracticePage } from "../pages/DSAPracticePage";
+import { AptitudePage } from "../pages/AptitudePage";
 import { ProtectedRoute } from "./ProtectedRoute";
 
 function AppLayout({ children }: { children: ReactNode }) {
@@ -69,6 +71,22 @@ export function AppRouter() {
               element={
                 <ProtectedRoute>
                   <InterviewPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dsa-practice"
+              element={
+                <ProtectedRoute>
+                  <DSAPracticePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/aptitude"
+              element={
+                <ProtectedRoute>
+                  <AptitudePage />
                 </ProtectedRoute>
               }
             />

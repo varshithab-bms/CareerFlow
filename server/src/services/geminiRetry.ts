@@ -2,15 +2,19 @@ type GeminiModel = {
   generateContent: (prompt: string) => Promise<any>;
 };
 
-export function isGeminiRateLimitError(error: unknown) {
+export function isGeminiRetryableError(error: unknown) {
   const err = error as { status?: number; message?: string };
   const message = String(err?.message ?? "").toLowerCase();
 
   return (
     err?.status === 429 ||
+    err?.status === 503 ||
     message.includes("429") ||
+    message.includes("503") ||
     message.includes("too many requests") ||
-    message.includes("quota")
+    message.includes("quota") ||
+    message.includes("service unavailable") ||
+    message.includes("high demand")
   );
 }
 
@@ -37,7 +41,7 @@ export async function generateContentWithRetry(
     } catch (error) {
       const isLastAttempt = attempt === retries;
 
-      if (!isGeminiRateLimitError(error) || isLastAttempt) {
+      if (!isGeminiRetryableError(error) || isLastAttempt) {
         throw error;
       }
 

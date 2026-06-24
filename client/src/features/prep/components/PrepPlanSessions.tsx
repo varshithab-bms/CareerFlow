@@ -1,4 +1,5 @@
-import { BookOpen, Clock3, ExternalLink, FileText, HelpCircle, PlayCircle, Target } from "lucide-react";
+import { Link } from "react-router-dom";
+import { BookOpen, BrainCircuit, Clock3, Code2, ExternalLink, FileText, HelpCircle, PlayCircle, Target } from "lucide-react";
 import type { PrepGenerateResponse } from "../api";
 
 interface PrepPlanSessionsProps {
@@ -119,6 +120,34 @@ export function PrepPlanSessions({ plan }: PrepPlanSessionsProps) {
               );
             })}
           </div>
+
+          {(session.dsaTopics?.length || session.aptitudeTopics?.length) ? (
+            <div className="border-t border-slate-100 bg-slate-50/50 p-5 sm:p-6">
+              <p className="text-sm font-bold text-slate-900">Practice Problems</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {session.dsaTopics?.map((topic) => (
+                  <Link
+                    key={`dsa-${topic}`}
+                    to={`/dsa-practice?topic=${encodeURIComponent(topic)}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-fuchsia-200 bg-fuchsia-50 px-3 py-1.5 text-xs font-semibold text-fuchsia-700 transition hover:bg-fuchsia-100"
+                  >
+                    <Code2 className="h-3.5 w-3.5" />
+                    {topic}
+                  </Link>
+                ))}
+                {session.aptitudeTopics?.map((topic) => (
+                  <Link
+                    key={`apt-${topic}`}
+                    to={`/aptitude?category=${encodeURIComponent(topic)}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
+                  >
+                    <BrainCircuit className="h-3.5 w-3.5" />
+                    {topic}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </section>
       ))}
     </div>

@@ -17,6 +17,8 @@ export interface PrepSessionDto {
   durationHint?: string;
   objectives?: string;
   topics: PrepTopicDto[];
+  dsaTopics?: string[];
+  aptitudeTopics?: string[];
 }
 
 export interface PrepGenerateResponse {

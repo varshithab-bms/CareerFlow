@@ -133,40 +133,37 @@ export function SignupPage() {
         <section className="hidden lg:block">
           <div className="max-w-xl">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">
-              <span className="h-2 w-2 rounded-full bg-amber-300" />
-              Email-first account setup
+              <span className="h-2 w-2 rounded-full bg-brand" />
+              Welcome to CareerFlow
             </div>
 
             <h1 className="text-5xl font-bold tracking-tight">
-              Create one account for all your interview prep.
+              Accelerate your career journey.
             </h1>
 
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Your resume feedback, mock interviews, and prep tasks stay
-              connected to your email.
+              Join thousands of job seekers who are landing their dream roles faster with our intelligent tools.
             </p>
 
             <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
               <p className="text-sm font-medium text-slate-200">
-                Email account rules
+                Everything you need to succeed
               </p>
 
               <div className="mt-4 grid gap-3 text-sm text-slate-300">
-                <div className="flex items-center justify-between">
-                  <span>Valid email format</span>
-                  <span className="text-emerald-300">Required</span>
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>AI-powered resume tailoring</span>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span>Disposable emails</span>
-                  <span className="text-rose-300">Blocked</span>
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>Interactive mock interviews</span>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span>Password strength</span>
-                  <span className="text-emerald-300">
-                    8+ chars, Aa1
-                  </span>
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>Smart application tracking</span>
                 </div>
               </div>
             </div>
@@ -198,16 +195,6 @@ export function SignupPage() {
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white p-6 text-slate-900 shadow-2xl shadow-black/20 sm:p-8">
-            <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-              <div className="flex gap-2">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-
-                <span>
-                  Only valid personal or work emails can create accounts.
-                </span>
-              </div>
-            </div>
-
             <form
               onSubmit={handleSubmit}
               className="space-y-5"
