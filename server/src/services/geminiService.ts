@@ -136,7 +136,7 @@ Return ONLY valid JSON with this format:
     {
       "id": 1,
       "question": "string",
-      "category": "string" (e.g., "fundamentals", "practical", "design")
+      "category": "string (fundamentals, practical, or design)"
     }
   ]
 }`;
@@ -157,9 +157,9 @@ Question: ${question}
 Candidate's Answer: ${answer}
 Role: ${role}
 
-Evaluate this answer critically. Return ONLY valid JSON:
+Evaluate this answer critically. Return ONLY valid JSON with the following format, where score is a number between 0-100:
 {
-  "score": number (0-100),
+  "score": 85,
   "strengths": ["string"],
   "weaknesses": ["string"],
   "improvement": "string (specific advice)",
@@ -197,6 +197,98 @@ Return ONLY valid JSON:
   "followUpQuestion": "string",
   "reasoning": "string (why this question)"
 }`;
+
+  const responseText = await callAI(prompt);
+  return JSON.parse(extractJson(responseText));
+}
+
+export async function generateDSAInterviewQuestion(
+  role: string,
+  difficulty: "easy" | "medium" | "hard",
+  topic: string
+) {
+  const difficultyGuide = {
+    easy: "Simple problems with straightforward solutions, O(n) or O(n log n) time complexity",
+    medium: "Problems requiring optimal approaches, some trade-offs, O(n) or better time complexity",
+    hard: "Complex problems requiring advanced algorithms, optimal solutions, careful edge case handling",
+  };
+
+  const prompt = `You are an expert coding interview coach specializing in ${topic} problems for ${role} roles.
+
+Generate a coding problem for a ${role} role at ${difficultyGuide[difficulty]} difficulty focusing on ${topic}.
+
+Requirements:
+1. Provide a clear, concise problem title (similar to LeetCode titles, e.g., "Two Sum", "Maximum Subarray")
+2. Write a detailed problem statement without revealing the solution
+3. Specify constraints (input size, value ranges, etc.)
+4. Provide 2-3 input/output examples with explanations
+5. Give a hint about the approach (not the full solution)
+6. Define evaluation criteria (what makes a good solution)
+
+Return ONLY valid JSON with this format:
+{
+  "problemTitle": "string (concise title like LeetCode)",
+  "difficulty": "${difficulty}",
+  "topic": "${topic}",
+  "problemStatement": "string (detailed description)",
+  "constraints": "string (input/output constraints)",
+  "examples": [
+    "string (example 1 with input and output)",
+    "string (example 2 with input and output)"
+  ],
+  "approachHint": "string (hint about the approach, not the solution)",
+  "evaluationCriteria": "string (what makes a good solution: time complexity, space complexity, edge cases)"
+}
+
+IMPORTANT:
+- Do NOT include any code solution
+- Make the problem realistic and interview-appropriate
+- Ensure the problem is solvable within interview time constraints`;
+
+  const cacheKey = `dsa-q:${topic.trim().toLowerCase()}:${difficulty}:${role.trim().toLowerCase()}`;
+  const responseText = await callAI(prompt, cacheKey);
+  return JSON.parse(extractJson(responseText));
+}
+
+export async function evaluateDSAAnswer(
+  question: string,
+  code: string,
+  role: string,
+  topic: string,
+  difficulty: "easy" | "medium" | "hard"
+) {
+  const prompt = `You are an expert coding interviewer evaluating a candidate's solution.
+
+Problem: ${question}
+Topic: ${topic}
+Difficulty: ${difficulty}
+Role: ${role}
+
+Candidate's Code:
+\`\`\`
+${code}
+\`\`\`
+
+Evaluate this solution critically and realistically. Return ONLY valid JSON with the following format, where numeric fields are just numbers:
+{
+  "correctness": 8,
+  "timeComplexity": "string (e.g., O(n), O(n log n), O(n^2))",
+  "spaceComplexity": "string (e.g., O(1), O(n), O(n^2))",
+  "edgeCasesCovered": true,
+  "codeQuality": "string (Poor/Fair/Good/Excellent)",
+  "overallScore": 85,
+  "strengths": ["string"],
+  "weaknesses": ["string"],
+  "suggestions": ["string (specific actionable improvements)"]
+}
+
+Be realistic like a real interviewer. Do not praise incorrect or inefficient solutions unnecessarily.
+Consider:
+- Does the algorithm solve the problem correctly?
+- Is the time complexity optimal for the given difficulty?
+- Is the space complexity reasonable?
+- Are edge cases (empty input, single element, duplicates, etc.) handled?
+- Is the code clean, readable, and well-structured?`;
 
   const responseText = await callAI(prompt);
   return JSON.parse(extractJson(responseText));

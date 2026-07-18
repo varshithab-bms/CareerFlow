@@ -1,11 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Groq from "groq-sdk";
+import fs from "fs";
 import { env } from "../config/env.js";
 import {
   generateContentWithRetry,
   getGeminiErrorMessage,
   isGeminiRetryableError,
 } from "./geminiRetry.js";
+console.log("Gemini key exists:", !!env.GEMINI_API_KEY);
+console.log("Gemini key prefix:", env.GEMINI_API_KEY?.slice(0, 15));
 
 const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 const groq = env.GROQ_API_KEY ? new Groq({ apiKey: env.GROQ_API_KEY }) : null;
@@ -68,7 +71,10 @@ async function callGroq(prompt: string): Promise<string> {
  * Try Gemini first; on rate-limit / quota errors fall back to Groq when configured.
  * Optional cacheKey avoids repeat API calls during development (e.g. same role).
  */
-export async function callAI(prompt: string, cacheKey?: string): Promise<string> {
+export async function callAI(
+  prompt: string,
+  cacheKey?: string
+): Promise<string> {
   if (cacheKey) {
     const cached = responseCache.get(cacheKey);
     if (cached) {
@@ -80,14 +86,19 @@ export async function callAI(prompt: string, cacheKey?: string): Promise<string>
   let text: string;
 
   try {
-    text = await callGemini(prompt);
-  } catch (error) {
-    if (isGeminiRetryableError(error) && groq) {
-      console.warn("[callAI] Gemini rate limited — falling back to Groq");
-      text = await callGroq(prompt);
-    } else {
-      throw error;
+    if (!groq) {
+      throw new Error("Groq API key is not configured");
     }
+
+    console.info("[callAI] Using Groq");
+    text = await callGroq(prompt);
+  } catch (groqError) {
+    console.warn(
+      "[callAI] Groq failed, falling back to Gemini",
+      groqError
+    );
+
+    text = await callGemini(prompt);
   }
 
   if (cacheKey) {
@@ -97,10 +108,16 @@ export async function callAI(prompt: string, cacheKey?: string): Promise<string>
   return text;
 }
 
-export function clearAICache() {
-  responseCache.clear();
-}
-
-export function getAICacheSize() {
-  return responseCache.size;
+export async function transcribeAudioFile(filePath: string): Promise<string> {
+  if (!groq) {
+    throw new Error("Groq API key is not configured for transcription");
+  }
+  
+  const transcription = await groq.audio.transcriptions.create({
+    file: fs.createReadStream(filePath),
+    model: "whisper-large-v3-turbo",
+    response_format: "json",
+  });
+  
+  return transcription.text;
 }

@@ -42,7 +42,8 @@ export function AptitudePage() {
   const initialCategory = searchParams.get("category") as AptitudeCategory | null;
 
   let initialTab: AptitudeTab = "Quantitative";
-  let resolvedCategory: AptitudeCategory = aptitudeCategories["Quantitative"][0];
+  let resolvedCategory: AptitudeCategory =
+  aptitudeCategories["Quantitative"][0]!;
 
   if (initialCategory) {
     for (const tab of ["Quantitative", "Logical", "Verbal"] as AptitudeTab[]) {
@@ -140,10 +141,10 @@ export function AptitudePage() {
   };
 
   const handleTabChange = (tab: AptitudeTab) => {
-    setActiveTab(tab);
-    setActiveCategory(aptitudeCategories[tab][0]);
-    setQuizState("idle");
-  };
+  setActiveTab(tab);
+  setActiveCategory(aptitudeCategories[tab][0]!);
+  setQuizState("idle");
+};
 
   const handleCategoryChange = (cat: AptitudeCategory) => {
     setActiveCategory(cat);
@@ -313,8 +314,8 @@ export function AptitudePage() {
               onClick={() => {
                 const cats = aptitudeCategories[activeTab];
                 const idx = cats.indexOf(activeCategory);
-                const next = cats[idx + 1] ?? aptitudeCategories[activeTab][0];
-                handleCategoryChange(next);
+                const next = cats[idx + 1] ?? aptitudeCategories[activeTab][0]!;
+handleCategoryChange(next);
               }}
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark"
             >
