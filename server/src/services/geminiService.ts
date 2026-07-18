@@ -104,7 +104,14 @@ JSON format:
 }`;
 
   const responseText = await callAI(prompt);
-  return JSON.parse(extractJson(responseText));
+  const jsonString = extractJson(responseText);
+
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("Failed to parse resume tailor response:", responseText);
+    throw new Error("Failed to parse resume tailoring results. Please try again.");
+  }
 }
 
 export async function generateInterviewQuestions(

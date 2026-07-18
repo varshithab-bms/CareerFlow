@@ -22,11 +22,14 @@ if (!baseURL) {
 
 export const api = axios.create({
   baseURL,
-  timeout: 20000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+/** Longer timeout for AI-backed endpoints (analysis, transcription, interviews). */
+export const AI_REQUEST_TIMEOUT_MS = 120000;
 
 api.interceptors.request.use((config) => {
   const token = getStoredToken();

@@ -9,6 +9,8 @@ import {
   completeInterview,
   type Interview,
   type Difficulty,
+  type InterviewType,
+  type DSATopic,
 } from "../features/interview/api";
 import { useToast } from "../context/ToastContext";
 
@@ -17,10 +19,10 @@ export function InterviewPage() {
   const [interview, setInterview] = useState<Interview | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleStart = async (role: string, difficulty: Difficulty) => {
+  const handleStart = async (role: string, difficulty: Difficulty, type?: InterviewType, topic?: DSATopic) => {
     try {
       setIsLoading(true);
-      const data = await startInterview(role, difficulty);
+      const data = await startInterview(role, difficulty, type, topic);
       setInterview(data);
       showToast("Interview started successfully", "success");
     } catch (error) {

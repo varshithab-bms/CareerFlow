@@ -188,10 +188,6 @@ export function SignupPage() {
             <h2 className="mt-8 text-3xl font-bold tracking-tight">
               Create your account
             </h2>
-
-            <p className="mt-2 text-sm text-slate-300">
-              Sign up with a valid email and secure password.
-            </p>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white p-6 text-slate-900 shadow-2xl shadow-black/20 sm:p-8">
@@ -305,8 +301,6 @@ export function SignupPage() {
                     id="email-help"
                     className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500"
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                    Disposable and test emails are not accepted.
                   </p>
                 )}
               </div>

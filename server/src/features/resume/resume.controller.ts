@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import * as resumeService from "./resume.service.js";
+import { ApiError } from "../../utils/ApiError.js";
 
 export async function uploadFile(req: Request, res: Response, next: NextFunction) {
   try {
-    if (!req.userId) throw new Error("Unauthorized");
-    if (!req.file) throw new Error("No file uploaded");
+    if (!req.userId) throw new ApiError("Unauthorized", 401);
+    if (!req.file) throw new ApiError("No file uploaded", 400);
 
     const result = await resumeService.uploadResume(req.userId, req.file);
 
@@ -16,11 +17,11 @@ export async function uploadFile(req: Request, res: Response, next: NextFunction
 
 export async function analyzeResume(req: Request, res: Response, next: NextFunction) {
   try {
-    if (!req.userId) throw new Error("Unauthorized");
+    if (!req.userId) throw new ApiError("Unauthorized", 401);
 
     const { resumeId, jobTitle } = req.body;
-    if (!resumeId) throw new Error("resumeId required");
-    if (!jobTitle) throw new Error("jobTitle required");
+    if (!resumeId) throw new ApiError("resumeId required", 400);
+    if (!jobTitle) throw new ApiError("jobTitle required", 400);
 
     const result = await resumeService.analyzeResume(req.userId, resumeId, jobTitle);
 
@@ -32,11 +33,11 @@ export async function analyzeResume(req: Request, res: Response, next: NextFunct
 
 export async function tailorResume(req: Request, res: Response, next: NextFunction) {
   try {
-    if (!req.userId) throw new Error("Unauthorized");
+    if (!req.userId) throw new ApiError("Unauthorized", 401);
 
     const { resumeId, jobDescription } = req.body;
     if (!resumeId || !jobDescription) {
-      throw new Error("resumeId and jobDescription required");
+      throw new ApiError("resumeId and jobDescription required", 400);
     }
 
     const result = await resumeService.tailorResume(
@@ -53,7 +54,7 @@ export async function tailorResume(req: Request, res: Response, next: NextFuncti
 
 export async function getHistory(req: Request, res: Response, next: NextFunction) {
   try {
-    if (!req.userId) throw new Error("Unauthorized");
+    if (!req.userId) throw new ApiError("Unauthorized", 401);
 
     const result = await resumeService.getResumeHistory(req.userId);
 
@@ -65,7 +66,7 @@ export async function getHistory(req: Request, res: Response, next: NextFunction
 
 export async function getResume(req: Request, res: Response, next: NextFunction) {
   try {
-    if (!req.userId) throw new Error("Unauthorized");
+    if (!req.userId) throw new ApiError("Unauthorized", 401);
 
     const { resumeId } = req.params;
 

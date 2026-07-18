@@ -1,4 +1,4 @@
-import { api } from "../../lib/api";
+import { api, AI_REQUEST_TIMEOUT_MS } from "../../lib/api";
 
 export interface ResumeAnalysis {
   atsScore?: number;
@@ -44,7 +44,8 @@ export async function uploadResume(file: File): Promise<Resume> {
 export async function analyzeResume(resumeId: string, jobTitle: string): Promise<Resume> {
   const { data } = await api.post<{ success: boolean; data: Resume }>(
     "/resume/analyze",
-    { resumeId, jobTitle }
+    { resumeId, jobTitle },
+    { timeout: AI_REQUEST_TIMEOUT_MS }
   );
   return (data as any).success !== undefined ? data.data : (data as unknown as Resume);
 }
@@ -55,7 +56,8 @@ export async function tailorResume(
 ): Promise<Resume> {
   const { data } = await api.post<{ success: boolean; data: Resume }>(
     "/resume/tailor",
-    { resumeId, jobDescription }
+    { resumeId, jobDescription },
+    { timeout: AI_REQUEST_TIMEOUT_MS }
   );
   return (data as any).success !== undefined ? data.data : (data as unknown as Resume);
 }

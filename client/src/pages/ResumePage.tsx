@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { AppLayout } from "../components/AppLayout";
 import { ResumeUploader } from "../features/resume/components/ResumeUploader";
 import { ResumeAnalysisResult } from "../features/resume/components/ResumeAnalysisResult";
@@ -53,7 +54,11 @@ export function ResumePage() {
       fetchHistory();
     } catch (err) {
       console.error(err);
-      showToast("Failed to analyze resume", "error");
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.error?.message
+          ? err.response.data.error.message
+          : "Failed to analyze resume";
+      showToast(message, "error");
     } finally {
       setIsUploading(false);
     }
@@ -207,7 +212,12 @@ export function ResumePage() {
                   </div>
 
                   <ResumeAnalysisResult
-                    analysis={resume.analysis?.baseAnalysis || resume.analysis}
+                    analysis={{
+                      ...(resume.analysis?.baseAnalysis || resume.analysis),
+                      ...(resume.analysis?.tailored || {}),
+                      jobDescription:
+                        resume.analysis?.jobDescription || resume.analysis?.tailored?.jobDescription,
+                    }}
                   />
                 </>
               )}

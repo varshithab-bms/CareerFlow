@@ -4,6 +4,12 @@ export interface InterviewQuestion {
   id: number;
   question: string;
   category: string;
+  problemTitle?: string;
+  topic?: string;
+  constraints?: string;
+  examples?: string[];
+  approachHint?: string;
+  evaluationCriteria?: string;
 }
 
 export interface InterviewAnswer {
@@ -28,7 +34,9 @@ export interface InterviewFeedback {
 export interface InterviewDocument extends Document {
   userId: mongoose.Types.ObjectId;
   role: string;
+  type: "behavioral" | "technical" | "dsa";
   difficulty: "easy" | "medium" | "hard";
+  topic?: string;
   questions: InterviewQuestion[];
   answers: InterviewAnswer[];
   currentQuestionIndex: number;
@@ -50,16 +58,31 @@ const interviewSchema = new Schema<InterviewDocument>(
       type: String,
       required: true,
     },
+    type: {
+      type: String,
+      enum: ["behavioral", "technical", "dsa"],
+      default: "technical",
+      required: true,
+    },
     difficulty: {
       type: String,
       enum: ["easy", "medium", "hard"],
       required: true,
+    },
+    topic: {
+      type: String,
     },
     questions: [
       {
         id: Number,
         question: String,
         category: String,
+        problemTitle: String,
+        topic: String,
+        constraints: String,
+        examples: [String],
+        approachHint: String,
+        evaluationCriteria: String,
       },
     ],
     answers: [

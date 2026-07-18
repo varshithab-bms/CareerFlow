@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
+import fs from "fs";
 import * as interviewService from "./interview.service.js";
+import { transcribeAudioFile } from "../../services/callAI.js";
 
 declare global {
   namespace Express {
@@ -19,7 +21,7 @@ export async function startInterview(
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { role, difficulty } = req.body;
+    const { role, difficulty, type, topic } = req.body;
     if (!role || !difficulty) {
       return res
         .status(400)
@@ -29,12 +31,16 @@ export async function startInterview(
     const result = await interviewService.startInterview(
       req.userId,
       role,
-      difficulty
+      difficulty,
+      type || "technical",
+      topic
     );
     res.status(200).json({ success: true, data: result });
   } catch (error) {
-    next(error);
-  }
+  console.error("START INTERVIEW ERROR:");
+  console.error(error);
+  next(error);
+}
 }
 
 export async function submitAnswer(
@@ -120,6 +126,36 @@ export async function getInterview(
     );
     res.status(200).json({ success: true, data: interview });
   } catch (error) {
+    next(error);
+  }
+}
+
+export async function transcribeAudio(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No audio file provided" });
+    }
+
+    const text = await transcribeAudioFile(req.file.path);
+
+    // Clean up temp file
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error("Failed to delete temp audio file:", err);
+    });
+
+    res.status(200).json({ success: true, data: { text } });
+  } catch (error) {
+    if (req.file) {
+      fs.unlink(req.file.path, () => {});
+    }
     next(error);
   }
 }

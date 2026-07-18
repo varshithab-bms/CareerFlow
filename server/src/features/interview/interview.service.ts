@@ -2,6 +2,8 @@ import { Interview, InterviewAnswer } from "./interview.model.js";
 import {
   generateInterviewQuestions,
   evaluateInterviewAnswer,
+  generateDSAInterviewQuestion,
+  evaluateDSAAnswer,
 } from "../../services/geminiService.js";
 import { ApiError } from "../../utils/ApiError.js";
 import mongoose from "mongoose";
@@ -9,15 +11,43 @@ import mongoose from "mongoose";
 export async function startInterview(
   userId: string,
   role: string,
-  difficulty: "easy" | "medium" | "hard"
+  difficulty: "easy" | "medium" | "hard",
+  type: "behavioral" | "technical" | "dsa" = "technical",
+  topic?: string
 ): Promise<any> {
   try {
-    const questionsResponse = await generateInterviewQuestions(role, difficulty);
+    let questionsResponse;
+
+    if (type === "dsa") {
+      if (!topic) {
+        throw new ApiError("Topic is required for DSA interviews", 400);
+      }
+      const dsaQuestion = await generateDSAInterviewQuestion(role, difficulty, topic);
+      questionsResponse = {
+        questions: [
+          {
+            id: 1,
+            question: dsaQuestion.problemStatement,
+            category: topic,
+            problemTitle: dsaQuestion.problemTitle,
+            topic: dsaQuestion.topic,
+            constraints: dsaQuestion.constraints,
+            examples: dsaQuestion.examples,
+            approachHint: dsaQuestion.approachHint,
+            evaluationCriteria: dsaQuestion.evaluationCriteria,
+          },
+        ],
+      };
+    } else {
+      questionsResponse = await generateInterviewQuestions(role, difficulty);
+    }
 
     const interview = new Interview({
       userId: new mongoose.Types.ObjectId(userId),
       role,
+      type,
       difficulty,
+      topic,
       questions: questionsResponse.questions || [],
       answers: [],
       currentQuestionIndex: 0,
@@ -33,17 +63,24 @@ export async function startInterview(
     return {
       interviewId: interview._id.toString(),
       role: interview.role,
+      type: interview.type,
+      topic: interview.topic,
       difficulty: interview.difficulty,
       totalQuestions: interview.questions.length,
       currentQuestionIndex: interview.currentQuestionIndex,
       question: currentQuestion,
     };
   } catch (error) {
-    throw new ApiError(
-      `Failed to start interview: ${error instanceof Error ? error.message : String(error)}`,
-      500
-    );
-  }
+  console.error("SERVICE ERROR:");
+  console.error(error);
+
+  throw new ApiError(
+    `Failed to start interview: ${
+      error instanceof Error ? error.message : String(error)
+    }`,
+    500
+  );
+}
 }
 
 export async function submitAnswer(
@@ -70,27 +107,38 @@ export async function submitAnswer(
       throw new ApiError("No current question found", 400);
     }
 
-    // Evaluate answer with Gemini
-    const evaluation = await evaluateInterviewAnswer(
-      currentQuestion.question,
-      answer,
-      interview.role
-    );
+    let evaluation;
+
+    if (interview.type === "dsa") {
+      evaluation = await evaluateDSAAnswer(
+        currentQuestion.question,
+        answer,
+        interview.role,
+        interview.topic || "",
+        interview.difficulty
+      );
+    } else {
+      evaluation = await evaluateInterviewAnswer(
+        currentQuestion.question,
+        answer,
+        interview.role
+      );
+    }
 
     // Save answer
     const answerRecord: InterviewAnswer = {
       questionId: currentQuestion.id,
       answer,
-      score: evaluation.score,
+      score: evaluation.overallScore ? evaluation.overallScore / 10 : evaluation.score,
       strengths: evaluation.strengths || [],
       weaknesses: evaluation.weaknesses || [],
-      improvement: evaluation.improvement || "",
-      verdict: evaluation.verdict || "",
+      improvement: evaluation.suggestions ? evaluation.suggestions.join(" ") : (evaluation.improvement || ""),
+      verdict: evaluation.codeQuality || evaluation.verdict || "",
     };
 
     interview.answers.push(answerRecord);
     // evaluation.score is 0-10; accumulate raw then compute avg at end
-    interview.totalScore += evaluation.score;
+    interview.totalScore += answerRecord.score;
 
     // Move to next question if available
     const hasNextQuestion =
@@ -108,15 +156,29 @@ export async function submitAnswer(
       ? interview.questions[interview.currentQuestionIndex]
       : null;
 
+    const evaluationResponse = interview.type === "dsa"
+      ? {
+          overallScore: evaluation.overallScore,
+          correctness: evaluation.correctness,
+          timeComplexity: evaluation.timeComplexity,
+          spaceComplexity: evaluation.spaceComplexity,
+          edgeCasesCovered: evaluation.edgeCasesCovered,
+          codeQuality: evaluation.codeQuality,
+          strengths: evaluation.strengths,
+          weaknesses: evaluation.weaknesses,
+          suggestions: evaluation.suggestions,
+        }
+      : {
+          score: evaluation.score,
+          strengths: evaluation.strengths,
+          weaknesses: evaluation.weaknesses,
+          improvement: evaluation.improvement,
+          verdict: evaluation.verdict,
+        };
+
     return {
       interviewId: interview._id.toString(),
-      evaluation: {
-        score: evaluation.score,
-        strengths: evaluation.strengths,
-        weaknesses: evaluation.weaknesses,
-        improvement: evaluation.improvement,
-        verdict: evaluation.verdict,
-      },
+      evaluation: evaluationResponse,
       nextQuestion: nextQuestion || null,
       isComplete: interview.status === "completed",
       questionsAnswered: interview.answers.length,

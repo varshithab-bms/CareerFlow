@@ -191,8 +191,6 @@ export function LoginPage() {
                     id="email-help"
                     className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500"
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                    Enter the email address associated with your account.
                   </p>
                 )}
               </div>
