@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { AxiosError } from "axios";
-import { ArrowRight, CheckCircle2, Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
 import { getErrorMessage, useAuth } from "../context/AuthContext";
 
 type LoginErrors = {

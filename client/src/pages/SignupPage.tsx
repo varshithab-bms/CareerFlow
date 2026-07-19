@@ -9,7 +9,6 @@ import {
   Loader2,
   Lock,
   Mail,
-  ShieldCheck,
   User,
 } from "lucide-react";
 import { getErrorMessage, useAuth } from "../context/AuthContext";

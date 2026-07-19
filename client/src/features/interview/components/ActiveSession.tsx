@@ -47,7 +47,6 @@ export function ActiveSession({
   const [showHints, setShowHints] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [interimTranscript, setInterimTranscript] = useState("");
   const [micSupported, setMicSupported] = useState(true);
   const [micError, setMicError] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
