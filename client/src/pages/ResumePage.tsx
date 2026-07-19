@@ -12,7 +12,7 @@ import {
 } from "../features/resume/api";
 import { useToast } from "../context/ToastContext";
 import { SkeletonText } from "../components/Skeleton";
-import { FilePlus2, History, Wand2 } from "lucide-react";
+import { ArrowRight, FilePlus2, History, Wand2 } from "lucide-react";
 
 export function ResumePage() {
   const { showToast } = useToast();
@@ -99,8 +99,8 @@ export function ResumePage() {
   return (
     <AppLayout>
       <div className="mb-8">
-        <p className="text-sm font-semibold text-brand">Resume Analyzer</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+        <p className="text-label text-brand">Resume Analyzer</p>
+        <h1 className="mt-2 text-display text-ink">
           Turn your resume into interview momentum.
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
@@ -149,12 +149,21 @@ export function ResumePage() {
                 })}
               </ul>
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
-                <FilePlus2 className="mx-auto h-8 w-8 text-slate-400" />
-                <p className="mt-3 text-sm font-semibold text-slate-700">No resumes yet</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Your analyses will appear here for quick review.
+              <div className="border border-accent/40 bg-accent-soft/60 p-5 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent-deep">
+                  <FilePlus2 className="h-5 w-5" />
+                </div>
+                <p className="mt-3 text-sm leading-5 text-slate-700">
+                  Upload a resume to get your first ATS score and focused next steps.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("resume-uploader")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  className="focus-ring mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-dark"
+                >
+                  Upload resume
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
             )}
           </div>
@@ -173,7 +182,7 @@ export function ResumePage() {
           </div>
         </aside>
 
-        <div className="lg:col-span-2">
+        <div id="resume-uploader" className="lg:col-span-2">
           {!resume && !isUploading ? (
             <ResumeUploader onUpload={handleUpload} isUploading={isUploading} />
           ) : (

@@ -13,7 +13,7 @@ import {
   Code2,
   FileText,
   Mic2,
-  Sparkles,
+  Compass,
   Target,
 } from "lucide-react";
 import { getResumeHistory } from "../features/resume/api";
@@ -273,11 +273,11 @@ export function DashboardPage() {
     <AppLayout>
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-            <Sparkles className="h-3.5 w-3.5" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent-soft px-3 py-1 text-xs font-semibold text-ink">
+            <Compass className="h-3.5 w-3.5 text-accent-deep" />
             Interview prep workspace
           </div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+          <h1 className="mt-4 text-display text-ink sm:text-4xl">
             Your CareerFlow dashboard
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
@@ -351,7 +351,7 @@ export function DashboardPage() {
                   <span className="font-medium text-slate-700">{stat.label}</span>
                   <p className="mt-0.5 text-xs text-slate-500">{stat.detail}</p>
                 </div>
-                <span className="shrink-0 text-right text-xs font-bold text-amber-700">
+                <span className="shrink-0 text-right text-xs font-bold text-accent-deep">
                   {stat.current}/{stat.goal}
                 </span>
               </div>
@@ -360,7 +360,7 @@ export function DashboardPage() {
                   <span
                     key={index}
                     className={`h-2.5 flex-1 rounded-full transition-colors duration-500 ${
-                      index < stat.current ? "bg-amber-500" : "bg-slate-200"
+                      index < stat.current ? "bg-accent" : "bg-surface-muted"
                     }`}
                   />
                 ))}

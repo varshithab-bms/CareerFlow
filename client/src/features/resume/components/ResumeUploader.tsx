@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { FileCheck2, FileUp, Sparkles, Target, X } from "lucide-react";
+import { FileCheck2, FileSearch, FileUp, Target, X } from "lucide-react";
 import { useToast } from "../../../context/ToastContext";
 
 interface ResumeUploaderProps {
@@ -64,8 +64,8 @@ export function ResumeUploader({ onUpload, isUploading }: ResumeUploaderProps) {
   return (
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.3fr]">
       <aside className="soft-panel p-6">
-        <div className="inline-flex rounded-xl border border-blue-100 bg-blue-50 p-2 text-blue-700">
-          <Sparkles className="h-5 w-5" />
+        <div className="inline-flex rounded-xl border border-accent/40 bg-accent-soft p-2 text-accent-deep">
+          <FileSearch className="h-5 w-5" />
         </div>
         <h2 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">
           Resume coaching in three steps

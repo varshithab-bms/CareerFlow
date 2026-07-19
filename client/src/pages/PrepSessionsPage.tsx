@@ -1,6 +1,6 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import type { AxiosError } from "axios";
-import { ArrowRight, BookOpen, Briefcase, Loader2, Sparkles, Video } from "lucide-react";
+import { ArrowRight, BookOpen, Briefcase, CalendarDays, ListChecks, Loader2, Video } from "lucide-react";
 import { AppLayout } from "../components/AppLayout";
 import { getErrorMessage } from "../context/AuthContext";
 import { PrepMarkdown } from "../features/prep/components/PrepMarkdown";
@@ -12,6 +12,7 @@ export function PrepSessionsPage() {
   const gen = useGeneratePrepMutation();
   const [preset, setPreset] = useState<string>(JOB_ROLE_PRESETS[0] ?? "");
   const [customRole, setCustomRole] = useState("");
+  const roleSelectRef = useRef<HTMLSelectElement>(null);
 
   const effectiveRole = useMemo(() => {
     if (preset === CUSTOM_ROLE_VALUE) return customRole.trim();
@@ -33,8 +34,8 @@ export function PrepSessionsPage() {
     <AppLayout>
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold text-brand">Prep Sessions</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+          <p className="text-label text-brand">Prep Sessions</p>
+          <h1 className="mt-2 text-display text-ink">
             Build a focused interview roadmap.
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
@@ -58,13 +59,13 @@ export function PrepSessionsPage() {
           </p>
           <div className="mt-6 grid gap-3">
             {[
-              "Three interview-focused sessions",
-              "Role-specific topics",
-              "Optional video resources",
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-                <Sparkles className="h-4 w-4 text-brand" />
-                {item}
+              { label: "Three interview-focused sessions", icon: CalendarDays },
+              { label: "Role-specific topics", icon: ListChecks },
+              { label: "Optional video resources", icon: Video },
+            ].map(({ label, icon: Icon }) => (
+              <div key={label} className="flex items-center gap-2 rounded-xl bg-surface-muted px-3 py-2 text-sm font-medium text-slate-700">
+                <Icon className="h-4 w-4 text-accent-deep" />
+                {label}
               </div>
             ))}
           </div>
@@ -84,6 +85,7 @@ export function PrepSessionsPage() {
               </label>
               <select
                 id="job-role-preset"
+                ref={roleSelectRef}
                 value={preset}
                 onChange={(e) => setPreset(e.target.value)}
                 className="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-brand"
@@ -178,10 +180,24 @@ export function PrepSessionsPage() {
           <PrepPlanSessions plan={gen.data} />
         </div>
       ) : !gen.isPending ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center">
-          <BookOpen className="mx-auto h-9 w-9 text-slate-400" />
-          <p className="mt-3 text-sm font-semibold text-slate-700">No prep plan yet</p>
-          <p className="mt-1 text-sm text-slate-500">Choose a role and generate your first roadmap.</p>
+        <div className="mt-8 border border-accent/40 bg-accent-soft/60 p-7 text-center sm:p-8">
+          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-accent-soft text-accent-deep">
+            <BookOpen className="h-5 w-5" />
+          </div>
+          <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-700">
+            Choose your target role to build a focused prep roadmap for your next interview.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              document.getElementById("job-role-preset")?.scrollIntoView({ behavior: "smooth", block: "center" });
+              roleSelectRef.current?.focus({ preventScroll: true });
+            }}
+            className="focus-ring mt-5 inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-brand-dark"
+          >
+            Choose a role
+            <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
       ) : null}
     </AppLayout>

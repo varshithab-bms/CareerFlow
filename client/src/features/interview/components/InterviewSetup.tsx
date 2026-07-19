@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Briefcase, Gauge, Mic2, Sparkles } from "lucide-react";
+import { ArrowRight, Briefcase, Clock3, Gauge, MessageSquareText, Mic2, PanelTop } from "lucide-react";
 import type { Difficulty, InterviewType, DSATopic } from "../api";
 
 interface InterviewSetupProps {
@@ -85,10 +85,14 @@ export function InterviewSetup({ onStart, isLoading }: InterviewSetupProps) {
           feedback before moving forward.
         </p>
         <div className="mt-6 grid gap-3">
-          {["Focused question display", "Timed answer drafting", "Instant feedback and next steps"].map((item) => (
-            <div key={item} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-              <Sparkles className="h-4 w-4 text-brand" />
-              {item}
+          {[
+            { label: "Focused question display", icon: PanelTop },
+            { label: "Timed answer drafting", icon: Clock3 },
+            { label: "Instant feedback and next steps", icon: MessageSquareText },
+          ].map(({ label, icon: Icon }) => (
+            <div key={label} className="flex items-center gap-2 rounded-xl bg-surface-muted px-3 py-2 text-sm font-medium text-slate-700">
+              <Icon className="h-4 w-4 text-accent-deep" />
+              {label}
             </div>
           ))}
         </div>

@@ -1,4 +1,8 @@
 /** @type {import('tailwindcss').Config} */
+import { designTokens } from "./src/styles/tokens.js";
+
+const { colors, spacing, typeScale } = designTokens;
+
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
@@ -6,16 +10,24 @@ export default {
       fontFamily: {
         sans: ["DM Sans", "system-ui", "sans-serif"],
       },
+      fontSize: typeScale,
+      spacing,
       colors: {
         surface: {
-          DEFAULT: "#f8fafc",
-          card: "#ffffff",
-          muted: "#f1f5f9",
+          DEFAULT: colors.warmWhite,
+          card: colors.paper,
+          muted: colors.warmWhiteMuted,
         },
         brand: {
-          DEFAULT: "#2563eb",
-          dark: "#1d4ed8",
-          soft: "#eff6ff",
+          DEFAULT: colors.inkNavy,
+          dark: "#06070B",
+          soft: colors.warmWhiteMuted,
+        },
+        ink: { DEFAULT: colors.inkNavy, muted: colors.inkMuted },
+        accent: {
+          DEFAULT: colors.warmAmber,
+          deep: colors.warmAmberDeep,
+          soft: colors.warmAmberSoft,
         },
       },
       boxShadow: {
