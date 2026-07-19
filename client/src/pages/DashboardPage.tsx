@@ -13,7 +13,6 @@ import {
   Code2,
   FileText,
   Mic2,
-  Settings,
   Sparkles,
   Target,
 } from "lucide-react";
@@ -25,7 +24,6 @@ import {
   getDsaWeeklyCount,
   getWeeklyInterviewCount,
   loadWeeklyGoals,
-  progressPct,
   saveWeeklyGoals,
   type WeeklyGoals,
 } from "../lib/weeklyProgress";
@@ -118,8 +116,6 @@ export function DashboardPage() {
       detail: `${dsaCount} of ${weeklyGoals.dsa} weekly goal`,
       current: dsaCount,
       goal: weeklyGoals.dsa,
-      barColor: "bg-fuchsia-500",
-      tone: "text-fuchsia-600",
     },
     {
       label: "Aptitude",
@@ -130,8 +126,6 @@ export function DashboardPage() {
       detail: `${aptitudeQuizCount} of ${weeklyGoals.aptitude} weekly goal`,
       current: aptitudeQuizCount,
       goal: weeklyGoals.aptitude,
-      barColor: "bg-rose-500",
-      tone: "text-rose-600",
     },
     {
       label: "Mock Interviews",
@@ -139,8 +133,6 @@ export function DashboardPage() {
       detail: `${weeklyInterviewCount} of ${weeklyGoals.interviews} weekly goal`,
       current: weeklyInterviewCount,
       goal: weeklyGoals.interviews,
-      barColor: "bg-emerald-500",
-      tone: "text-emerald-600",
     },
   ];
 
@@ -301,21 +293,21 @@ export function DashboardPage() {
         </Link>
       </div>
 
-      <section className="soft-panel mb-8 p-5 sm:p-6">
+      <section className="soft-panel mb-6 p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-slate-500">Weekly targets</p>
-            <h2 className="mt-1 text-xl font-bold text-slate-950">Your Progress This Week</h2>
+            <h2 className="mt-1 text-xl font-bold text-slate-950">Your readiness this week</h2>
           </div>
           <div className="relative" ref={goalsRef}>
             <button
               type="button"
               onClick={() => setGoalsOpen((open) => !open)}
-              className="focus-ring rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-600 hover:bg-slate-100"
+              className="focus-ring rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
               aria-label="Edit weekly goals"
               aria-expanded={goalsOpen}
             >
-              <Settings className="h-5 w-5" />
+              Edit goals
             </button>
             {goalsOpen ? (
               <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
@@ -351,28 +343,35 @@ export function DashboardPage() {
             ) : null}
           </div>
         </div>
-        <div className="mt-6 space-y-5">
+        <div className="mt-6 grid gap-5 md:grid-cols-3">
           {weeklyProgressStats.map((stat) => (
-            <div key={stat.label}>
-              <div className="mb-2 flex items-start justify-between gap-3 text-sm">
+            <div key={stat.label} className="min-w-0">
+              <div className="flex items-start justify-between gap-3 text-sm">
                 <div>
                   <span className="font-medium text-slate-700">{stat.label}</span>
                   <p className="mt-0.5 text-xs text-slate-500">{stat.detail}</p>
                 </div>
-                <span className={`shrink-0 font-bold ${stat.tone}`}>{stat.value}</span>
+                <span className="shrink-0 text-right text-xs font-bold text-amber-700">
+                  {stat.current}/{stat.goal}
+                </span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                <div
-                  className={`h-full rounded-full transition-all duration-700 ${stat.barColor}`}
-                  style={{ width: `${progressPct(stat.current, stat.goal)}%` }}
-                />
+              <div className="mt-3 flex items-center gap-1.5" aria-label={stat.value}>
+                {Array.from({ length: Math.min(stat.goal, 12) }, (_, index) => (
+                  <span
+                    key={index}
+                    className={`h-2.5 flex-1 rounded-full transition-colors duration-500 ${
+                      index < stat.current ? "bg-amber-500" : "bg-slate-200"
+                    }`}
+                  />
+                ))}
               </div>
+              <p className="mt-2 text-xs text-slate-500">{stat.value}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <div className="mb-8 grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
+      <div className="mb-8 grid gap-4 lg:grid-cols-[1.25fr_0.85fr]">
         <section className="soft-panel p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
