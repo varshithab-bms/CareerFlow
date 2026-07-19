@@ -1,5 +1,10 @@
 import { Interview, InterviewAnswer } from "./interview.model.js";
 import {
+  InterviewSession,
+  performanceCategories,
+  type PerformanceCategory,
+} from "./interviewSession.model.js";
+import {
   generateInterviewQuestions,
   evaluateInterviewAnswer,
   generateDSAInterviewQuestion,
@@ -7,6 +12,53 @@ import {
 } from "../../services/geminiService.js";
 import { ApiError } from "../../utils/ApiError.js";
 import mongoose from "mongoose";
+
+function getPerformanceCategory(interview: InstanceType<typeof Interview>, questionId: number): PerformanceCategory {
+  if (interview.type === "dsa") return "DSA";
+
+  const category = interview.questions.find((question) => question.id === questionId)?.category?.toLowerCase();
+  if (category === "practical" || category === "design" || category === "fundamentals") return category;
+  return "fundamentals";
+}
+
+async function persistSessionSummary(interview: InstanceType<typeof Interview>) {
+  const categoryScores = new Map<PerformanceCategory, number[]>();
+  for (const category of performanceCategories) categoryScores.set(category, []);
+
+  for (const answer of interview.answers) {
+    categoryScores.get(getPerformanceCategory(interview, answer.questionId))!.push(answer.score * 10);
+  }
+
+  const averages = Object.fromEntries(
+    performanceCategories.flatMap((category) => {
+      const scores = categoryScores.get(category)!;
+      return scores.length ? [[category, Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)]] : [];
+    }),
+  ) as Partial<Record<PerformanceCategory, number>>;
+  const answeredCategories = Object.entries(averages) as [PerformanceCategory, number][];
+  const weakestCategory = answeredCategories.length
+    ? answeredCategories.reduce((weakest, current) => current[1] < weakest[1] ? current : weakest)[0]
+    : interview.type === "dsa" ? "DSA" : "fundamentals";
+  const avgScore = interview.answers.length
+    ? Math.round((interview.totalScore / interview.answers.length) * 10)
+    : 0;
+
+  await InterviewSession.findOneAndUpdate(
+    { interviewId: interview._id },
+    {
+      $set: {
+        userId: interview.userId,
+        interviewId: interview._id,
+        date: interview.updatedAt,
+        totalQuestions: interview.questions.length,
+        avgScore,
+        weakestCategory,
+        categoryScores: averages,
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+}
 
 export async function startInterview(
   userId: string,
@@ -151,6 +203,7 @@ export async function submitAnswer(
     }
 
     await interview.save();
+    if (interview.status === "completed") await persistSessionSummary(interview);
 
     const nextQuestion = hasNextQuestion
       ? interview.questions[interview.currentQuestionIndex]
@@ -210,6 +263,7 @@ export async function completeInterview(
 
     interview.status = "completed";
     await interview.save();
+    await persistSessionSummary(interview);
 
     // Compute final score: average of per-answer scores (0-10 each) * 10 → 0-100
     const avgScore = interview.answers.length > 0

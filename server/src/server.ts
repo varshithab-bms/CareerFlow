@@ -7,6 +7,7 @@ import { prepRouter } from "./features/prep/prep.routes.js";
 import { taskRouter } from "./features/tasks/task.routes.js";
 import resumeRouter from "./features/resume/resume.routes.js";
 import interviewRouter from "./features/interview/interview.routes.js";
+import { dashboardRouter } from "./features/dashboard/dashboard.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
@@ -34,6 +35,7 @@ api.use("/prep", prepRouter);
 api.use("/tasks", taskRouter);
 api.use("/resume", resumeRouter);
 api.use("/interview", interviewRouter);
+api.use("/dashboard", dashboardRouter);
 
 app.use("/api/v1", api);
 
