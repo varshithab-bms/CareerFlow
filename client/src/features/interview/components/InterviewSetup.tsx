@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, ArrowRight, Briefcase, Clock3, Gauge, MessageSquareText, Mic2, PanelTop, Radio, Timer } from "lucide-react";
+import { Activity, ArrowRight, Briefcase, Gauge, MessageSquareText, Mic2, PanelTop, Radio, Timer } from "lucide-react";
 import type { Difficulty, InterviewType, DSATopic } from "../api";
 
 interface InterviewSetupProps {

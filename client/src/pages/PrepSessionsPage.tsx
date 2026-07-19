@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import type { AxiosError } from "axios";
-import { ArrowRight, BookOpen, Briefcase, CalendarDays, ListChecks, Loader2, Video } from "lucide-react";
+import { ArrowRight, BookOpen, Briefcase, CalendarDays, CheckCircle2, Loader2, Video } from "lucide-react";
 import { AppLayout } from "../components/AppLayout";
 import { getErrorMessage } from "../context/AuthContext";
 import { PrepMarkdown } from "../features/prep/components/PrepMarkdown";
@@ -30,6 +30,12 @@ export function PrepSessionsPage() {
     gen.mutate(effectiveRole);
   }
 
+  const roadmapSteps = [
+    { title: "Set your direction", detail: "Choose the role you are preparing for.", icon: Briefcase },
+    { title: "Build three sessions", detail: "Generate a focused sequence of topics and objectives.", icon: CalendarDays },
+    { title: "Practice and review", detail: "Work through each session and turn insights into tasks.", icon: CheckCircle2 },
+  ];
+
   return (
     <AppLayout>
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -45,39 +51,19 @@ export function PrepSessionsPage() {
         </div>
       </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[0.9fr_1.3fr]">
-        <aside className="soft-panel p-6">
-          <div className="inline-flex rounded-xl border border-indigo-100 bg-indigo-50 p-2 text-indigo-700">
-            <BookOpen className="h-5 w-5" />
-          </div>
-          <h2 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">
-            From broad role to daily practice.
-          </h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            CareerFlow turns your target title into a short prep plan you can
-            complete, review, and convert into tasks.
-          </p>
-          <div className="mt-6 grid gap-3">
-            {[
-              { label: "Three interview-focused sessions", icon: CalendarDays },
-              { label: "Role-specific topics", icon: ListChecks },
-              { label: "Optional video resources", icon: Video },
-            ].map(({ label, icon: Icon }) => (
-              <div key={label} className="flex items-center gap-2 rounded-xl bg-surface-muted px-3 py-2 text-sm font-medium text-slate-700">
-                <Icon className="h-4 w-4 text-accent-deep" />
-                {label}
-              </div>
-            ))}
-          </div>
-        </aside>
-
-        <form onSubmit={handleGenerate} className="soft-panel p-5 sm:p-6">
+      <form onSubmit={handleGenerate} className="soft-panel p-5 sm:p-6">
+        <div className="flex flex-col gap-3 border-b border-stone-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-brand">Plan setup</p>
-            <h2 className="mt-1 text-xl font-bold text-slate-950">Choose your target role</h2>
+            <p className="text-label text-brand">Roadmap setup</p>
+            <h2 className="mt-1 text-title text-ink">Start with the role you want next</h2>
           </div>
+          <div className="inline-flex items-center gap-2 text-sm text-ink-muted">
+            <BookOpen className="h-4 w-4 text-accent-deep" />
+            Three-session plan
+          </div>
+        </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+        <div className="mt-5 grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <div>
               <label htmlFor="job-role-preset" className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
                 <Briefcase className="h-4 w-4 text-brand" />
@@ -117,8 +103,8 @@ export function PrepSessionsPage() {
             </button>
           </div>
 
-          {preset === CUSTOM_ROLE_VALUE && (
-            <div className="mt-4">
+        {preset === CUSTOM_ROLE_VALUE && (
+          <div className="mt-4">
               <label htmlFor="custom-role" className="mb-2 block text-sm font-semibold text-slate-800">
                 Custom title
               </label>
@@ -130,16 +116,35 @@ export function PrepSessionsPage() {
                 placeholder="Staff Backend Engineer - Fintech"
                 className="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand"
               />
-            </div>
-          )}
+          </div>
+        )}
 
-          {errorMsg && (
-            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800" role="alert">
-              {errorMsg}
-            </div>
-          )}
-        </form>
-      </div>
+        {errorMsg && (
+          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800" role="alert">
+            {errorMsg}
+          </div>
+        )}
+      </form>
+
+      <section className="mt-8 border-y border-stone-200 py-6 sm:py-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-label text-brand">Your roadmap</p>
+            <h2 className="mt-1 text-title text-ink">A short plan from direction to practice</h2>
+          </div>
+          <p className="max-w-sm text-sm leading-6 text-ink-muted">Each plan connects a target role to practical sessions you can complete at your own pace.</p>
+        </div>
+        <ol className="mt-7 grid gap-6 md:grid-cols-3">
+          {roadmapSteps.map(({ title, detail, icon: Icon }, index) => (
+            <li key={title} className="relative border-l border-accent pl-5 md:border-l-0 md:border-t md:pl-0 md:pt-5">
+              <div className="absolute -left-2 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-ink md:left-0 md:-top-2">{index + 1}</div>
+              <Icon className="h-5 w-5 text-accent-deep" />
+              <h3 className="mt-3 text-sm font-bold text-ink">{title}</h3>
+              <p className="mt-1 text-sm leading-6 text-ink-muted">{detail}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       {gen.isPending && (
         <div className="mt-8 soft-panel flex items-center gap-4 p-5">
