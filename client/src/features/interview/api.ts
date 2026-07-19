@@ -2,6 +2,21 @@ import { api, AI_REQUEST_TIMEOUT_MS } from "../../lib/api";
 
 export type Difficulty = "easy" | "medium" | "hard";
 export type InterviewType = "behavioral" | "technical" | "dsa";
+export type PerformanceCategory = "fundamentals" | "practical" | "design" | "DSA";
+
+export interface InterviewPerformance {
+  sessions: Array<{
+    date: string;
+    totalQuestions: number;
+    avgScore: number;
+    weakestCategory: PerformanceCategory;
+  }>;
+  categories: Array<{
+    category: PerformanceCategory;
+    avgScore: number | null;
+    sessions: number;
+  }>;
+}
 
 export type DSATopic =
   | "Arrays"
@@ -111,6 +126,13 @@ export async function completeInterview(interviewId: string): Promise<Interview>
 export async function getInterviewHistory(): Promise<Interview[]> {
   const { data } = await api.get<{ success: boolean; data: Interview[] }>("/interview/history");
   return (data as any).success !== undefined ? data.data : (data as unknown as Interview[]);
+}
+
+export async function getInterviewPerformance(): Promise<InterviewPerformance> {
+  const { data } = await api.get<{ success: boolean; data: InterviewPerformance }>(
+    "/dashboard/interview-performance",
+  );
+  return (data as any).success !== undefined ? data.data : (data as unknown as InterviewPerformance);
 }
 
 export async function getInterviewById(interviewId: string): Promise<Interview> {

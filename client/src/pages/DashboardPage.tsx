@@ -17,7 +17,11 @@ import {
   Target,
 } from "lucide-react";
 import { getResumeHistory } from "../features/resume/api";
-import { getInterviewHistory } from "../features/interview/api";
+import {
+  getInterviewHistory,
+  getInterviewPerformance,
+  type InterviewPerformance,
+} from "../features/interview/api";
 import { useTasksQuery } from "../features/tasks/hooks";
 import {
   getAptitudeWeeklyStats,
@@ -33,6 +37,43 @@ function refreshLocalWeeklyStats() {
     dsaCount: getDsaWeeklyCount(),
     aptitude: getAptitudeWeeklyStats(),
   };
+}
+
+function InterviewTrendChart({ sessions }: { sessions: InterviewPerformance["sessions"] }) {
+  const width = 520;
+  const height = 170;
+  const padding = { top: 18, right: 14, bottom: 30, left: 34 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const points = sessions.map((session, index) => {
+    const x = padding.left + (sessions.length === 1 ? chartWidth / 2 : (index / (sessions.length - 1)) * chartWidth);
+    const y = padding.top + chartHeight - (session.avgScore / 100) * chartHeight;
+    return { x, y, ...session };
+  });
+  const polyline = points.map((point) => `${point.x},${point.y}`).join(" ");
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="mt-4 h-auto w-full" role="img" aria-label="Average score over recent interview sessions">
+      {[0, 50, 100].map((score) => {
+        const y = padding.top + chartHeight - (score / 100) * chartHeight;
+        return (
+          <g key={score}>
+            <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="#E5E1D8" strokeWidth="1" />
+            <text x="0" y={y + 4} fill="#5D5E66" fontSize="10">{score}</text>
+          </g>
+        );
+      })}
+      {points.length > 1 ? <polyline points={polyline} fill="none" stroke="#E8A33D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /> : null}
+      {points.map((point, index) => (
+        <g key={`${point.date}-${index}`}>
+          <circle cx={point.x} cy={point.y} r="4" fill="#14151F" stroke="#F7F5F0" strokeWidth="2" />
+          <text x={point.x} y={height - 8} textAnchor="middle" fill="#5D5E66" fontSize="10">
+            {new Date(point.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
 }
 
 export function DashboardPage() {
@@ -77,11 +118,17 @@ export function DashboardPage() {
     queryFn: getInterviewHistory,
     retry: 1,
   });
+  const interviewPerformanceQuery = useQuery({
+    queryKey: ["dashboard", "interview-performance"],
+    queryFn: getInterviewPerformance,
+    retry: 1,
+  });
   const tasksQuery = useTasksQuery();
 
   const resumes = resumesQuery.data ?? [];
   const interviews = interviewsQuery.data ?? [];
   const tasks = tasksQuery.data ?? [];
+  const interviewPerformance = interviewPerformanceQuery.data;
 
   const latestResume = [...resumes].sort(
     (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime(),
@@ -406,6 +453,40 @@ export function DashboardPage() {
                     No score available yet
                   </div>
                 )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 border-t border-stone-200 pt-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-bold text-ink">Interview score trend</h3>
+                <p className="mt-1 text-xs text-ink-muted">Average score across your last 10 completed sessions.</p>
+              </div>
+              {interviewPerformance?.sessions.length ? (
+                <span className="text-xs font-bold text-accent-deep">{interviewPerformance.sessions.length} sessions</span>
+              ) : null}
+            </div>
+            {interviewPerformanceQuery.isLoading ? (
+              <div className="mt-4 h-36 animate-pulse bg-surface-muted" />
+            ) : interviewPerformance?.sessions.length ? (
+              <InterviewTrendChart sessions={interviewPerformance.sessions} />
+            ) : (
+              <p className="mt-4 border-l-2 border-accent pl-3 text-sm leading-6 text-ink-muted">
+                Complete a mock interview to start building your score trend.
+              </p>
+            )}
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-stone-200 pt-6 sm:grid-cols-4">
+            {(interviewPerformance?.categories ?? [
+              { category: "fundamentals", avgScore: null, sessions: 0 },
+              { category: "practical", avgScore: null, sessions: 0 },
+              { category: "design", avgScore: null, sessions: 0 },
+              { category: "DSA", avgScore: null, sessions: 0 },
+            ]).map((category) => (
+              <div key={category.category}>
+                <p className="text-xs font-semibold capitalize text-ink-muted">{category.category}</p>
+                <p className="mt-1 text-lg font-bold text-ink">{category.avgScore === null ? "-" : `${category.avgScore}%`}</p>
+                <p className="text-xs text-slate-500">{category.sessions ? `${category.sessions} scored` : "No sessions"}</p>
               </div>
             ))}
           </div>
