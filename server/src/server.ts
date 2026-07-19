@@ -9,8 +9,13 @@ import resumeRouter from "./features/resume/resume.routes.js";
 import interviewRouter from "./features/interview/interview.routes.js";
 import { dashboardRouter } from "./features/dashboard/dashboard.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 const app = express();
+app.set("trust proxy", 1);
+
+
 const allowedOrigins = env.CLIENT_ORIGIN.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -22,7 +27,10 @@ const corsOptions = {
       : allowedOrigins,
   credentials: false,
 };
+app.use(helmet());
 app.use(cors(corsOptions));
+
+app.use("/api/v1/auth", rateLimit({ windowMs: 15 * 60 * 1000, max: 20 }));
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
